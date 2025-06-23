@@ -1,0 +1,203 @@
+html, body {
+    display: flex;
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    margin: 0;
+    padding: 0;
+    background-color: black;
+    font-family: Lilex;
+    color: white;
+    overflow: hidden;
+}
+
+#navbar {
+    display: flex;
+    position: relative;
+    width: 90%;
+    height: 10%;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+}
+
+#navbar div:first-child {
+    display: flex;
+    position: relative;
+    width: 50%;
+    height: 100%;
+    justify-content: flex-start;
+    align-items: center;
+}
+
+#navbar div:last-child {
+    display: flex;
+    position: relative;
+    width: 50%;
+    height: 100%;
+    justify-content: flex-end;
+    align-items: center;
+}
+
+#navbar a {
+    text-decoration: none;
+    color: white;
+    cursor: pointer;
+}
+
+#navbar a:hover {
+    opacity: 0.5;
+}
+
+#navbar-active {
+    color: green !important;
+    font-size: 18px;
+    margin-bottom: 1px;
+}
+
+#terminal {
+    display: flex;
+    position: relative;
+    width: 80%;
+    height: 75%;
+    flex-direction: column;
+    border: 2px solid #2f2f2f;
+}
+
+#terminal-header {
+    display: flex;
+    position: relative;
+    width: 100%;
+    height: 40px;
+    justify-content: center;
+    align-items: center;
+    font-family: Ubuntu;
+    background-color: #2f2f2f;
+    border-bottom: 1px solid black;
+}
+
+#terminal-header img {
+    position: absolute;
+    top: 2.5px;
+    right: 0;
+    height: 35px;
+    border: none;
+}
+
+#terminal-console {
+    display: flex;
+    position: relative;
+    width: 94%;
+    height: 94%;
+    padding: 3%;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: flex-start;
+    background-color: black;
+    overflow-y: scroll;
+    overflow-x: hidden;
+}
+
+#terminal-console::-webkit-scrollbar {
+    width: 5px;
+    background-color: transparent;
+}
+
+#terminal-console::-webkit-scrollbar-thumb {
+    background-color: #28282B;
+    border-radius: 25px;
+}
+
+#shortcuts {
+    display: flex;
+    position: relative;
+    width: 100%;
+    height: 15%;
+    padding-bottom: 5px;
+    justify-content: center;
+}
+
+#shortcuts::-webkit-scrollbar {
+    width: 5px;
+    background-color: transparent;
+}
+
+#shortcuts::-webkit-scrollbar-thumb {
+    background-color: #28282B;
+    border-radius: 25px;
+}
+
+#shortcuts-modal {
+    display: none;
+    width: 90%;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+}
+
+#shortcuts-modal div {
+    margin: 0 15px;
+    font-size: 14px;
+}
+
+#shortcuts-toggle-modal {
+    position: absolute;
+    right: 0;
+    width: 10%;
+    height: 100%;
+}
+
+#shortcuts-toggle {
+    display: none;
+    position: absolute;
+    right: 10px;
+    width: 25px;
+    padding: 5px;
+    cursor: pointer;
+}
+
+kbd {
+    padding: 2px 5px;
+    color: black;
+    font-size: 10px;
+    font-weight: 600;
+    text-align: center;
+    box-shadow: 0 2px 0 1px #ccc;
+    background-color: white;
+    border-radius: 0.25rem;
+    border: 1px solid #ccc;
+}
+
+#demo-cover { 
+    display: none;
+    position: absolute;
+    width: 100vw;
+    height: 100vh;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    background-color: black;
+    z-index: 10;
+} 
+
+#demo-cover a { 
+    color: green;
+}
+
+@media (max-width: 500px) {
+    #demo-cover { display: flex; } 
+}
+
+@font-face {
+    font-family: "Lilex";
+    src: url("/public/LilexNerdFontMono.ttf") format("truetype");
+}
+
+@font-face {
+    font-family: "Ubuntu";
+    src: url("/public/Ubuntu-Medium.ttf") format("truetype");
+}

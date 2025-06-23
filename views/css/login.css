@@ -1,0 +1,38 @@
+#login-container {
+    display: flex;
+    position: relative;
+    width: 100%;
+    flex-direction: column;
+}
+
+#login-form {
+    display: flex;
+    position: relative;
+    width: 100%;
+    flex-direction: column;
+}
+
+#login-form div {
+    display: flex;
+    position: relative;
+    width: 100%;
+    flex-direction: row;
+    align-items: center;
+}
+
+#login-form div {
+    margin-left: 10px;
+}
+
+#login-form div input {
+    font-family: Lilex;
+    font-size: 16px;
+    color: white;
+    margin-left: 10px;
+    background-color: transparent;
+    border: none;
+}
+
+#login-response {
+    margin-left: 15px;
+}
