@@ -1,0 +1,74 @@
+{% include "components.html" %}
+
+{% block head %}
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="https://unpkg.com/htmx.org@1.9.11" integrity="sha384-0gxUXCCR8yv9FM2b+U3FDbsKthCI66oH5IA9fHppQq9DDMHuMauqq1ZHBpJxQ0J0" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/htmx.org/dist/ext/json-enc.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/js-beautify/1.15.1/beautify-html.min.js"></script>
+<link rel="stylesheet" href="/css/globals.css">
+<link rel="stylesheet" href="/css/{{ screen }}.css">
+<script src="/js/{{ screen }}.js" defer></script>
+<script src="/js/shortcuts.js" defer></script>
+<link rel="icon" href="/public/favicon.ico">
+<title>gokey-cURL</title>
+{% endblock %}
+
+{% block body %}
+<!-- Navbar -->
+{% set index_active = "" %}
+{% if screen == "index" %}
+    {% set index_active = "navbar-active" %}
+{% endif %}
+
+<div id="navbar">
+    <div>
+        <a id="{{ index_active }}" href="/">home</a>
+    </div>
+    <div id="navbar-profile"></div>
+</div>
+
+<!-- Terminal -->
+<div id="terminal">
+    <div id="terminal-header">
+        <p>gokey-cURL:~</p>
+        <img src="/public/terminal-buttons.webp" alt="Terminal Buttons Image">
+    </div>
+    <div id="terminal-console">
+        {% if screen == "index" %}
+            <div id="history-modal"></div>
+            <div id="favorites-modal"></div>
+        {% elif screen == "login" %}
+            {% block login_form %}{% endblock %}
+        {% elif screen == "signup" %}
+            {% block signup_form %}{% endblock %}
+        {% elif screen == "profile" %}
+            {% block profile_form %}{% endblock %}
+        {% endif %}
+    </div>
+</div>
+
+<!-- Shortcuts -->
+<div id="shortcuts">
+    <div id="shortcuts-modal">
+        {% if screen == "index" %}
+            {% block index_shortcuts %}{% endblock %}
+        {% elif screen == "login" %}
+            {% block login_shortcuts %}{% endblock %}
+        {% elif screen == "signup" %}
+            {% block signup_shortcuts %}{% endblock %}
+        {% elif screen == "profile" %}
+            {% block profile_shortcuts %}{% endblock %}
+        {% endif %}           
+    </div>
+    <div id="shortcuts-toggle-modal">
+        <img id="shortcuts-toggle" onclick="toggleShortcuts();" />
+    </div>
+</div>
+
+<!-- Demo Cover -->
+<div id="demo-cover">
+    <p>don't use your phone to test your api🤦</p>
+    <p>go to <a href="https://gokey.github.io">gokey.github.io</a> for demos, docs, and download guides</p>
+</div>
+{% endblock %}

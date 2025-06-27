@@ -8,11 +8,13 @@ use serde_with::{NoneAsEmptyString, serde_as, skip_serializing_none};
 use validator::Validate;
 
 pub mod grpcurl;
+pub mod render;
 pub mod request;
 pub mod template;
 pub mod user;
 
 pub use grpcurl::*;
+pub use render::*;
 pub use request::*;
 pub use template::*;
 pub use user::*;
@@ -73,7 +75,11 @@ pub fn map_requests(mut statement: Statement<'_>, args: &[String]) -> Result<Vec
     Ok(parsed_rows)
 }
 
-pub fn map_single_value(mut statement: Statement<'_>, args: &[String], value: &str) -> Result<Vec<String>> {
+pub fn map_single_value(
+    mut statement: Statement<'_>,
+    args: &[String],
+    value: &str,
+) -> Result<Vec<String>> {
     let parsed_rows = statement
         .query_map(params_from_iter(args), |row| Ok(row.get(0)?))
         .map_err(|e| miette!("Error mapping {value}: {e}"))?
@@ -86,11 +92,18 @@ pub fn map_single_value(mut statement: Statement<'_>, args: &[String], value: &s
 pub fn map_user(mut statement: Statement<'_>, args: &[String]) -> Result<Vec<User>> {
     let parsed_rows = statement
         .query_map(params_from_iter(args), |row| {
+            let favorites_str: Option<String> = row.get(3)?;
+            let favorites = favorites_str.filter(|s| !s.is_empty()).map(|s| {
+                s.split(',')
+                    .filter_map(|n| n.trim().parse::<i32>().ok())
+                    .collect::<Vec<i32>>()
+            });
+
             Ok(User {
                 username: row.get(0)?,
                 email: row.get(1)?,
                 password: row.get(2)?,
-                favorites: row.get::<_, Option<Vec<i32>>>(3)?,
+                favorites,
                 date: row.get::<_, Option<String>>(4)?,
                 old_pw: row.get(5)?,
                 deleted: row.get(9)?,
@@ -101,4 +114,18 @@ pub fn map_user(mut statement: Statement<'_>, args: &[String]) -> Result<Vec<Use
         .collect::<Vec<_>>();
 
     Ok(parsed_rows)
+}
+
+pub fn serialize_favorites_for_db(favorites: &Option<Vec<i32>>) -> String {
+    match favorites {
+        Some(favorites) => {
+            let csv = favorites
+                .iter()
+                .map(|n| n.to_string())
+                .collect::<Vec<_>>()
+                .join(",");
+            csv
+        }
+        None => String::new(),
+    }
 }
