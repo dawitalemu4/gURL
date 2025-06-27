@@ -1,67 +1,70 @@
 # for you
 
-# FROM dawitalemu4/gokey:latest AS builder
+# FROM dawitalemu4/gURL:latest AS builder
 
 
-# FROM golang:1.22.2
+# FROM rust:1.88
 
-# RUN apt-get update && apt-get install -y curl
+# RUN apt-get update && apt-get install -y grpcurl
 
-# COPY --from=builder /gokey-cURL /gokey-cURL
+# COPY --from=builder /gURL /gURL
 # COPY --from=builder /go/views /go/views
+# COPY --from=builder /templates /templates 
 
 # COPY .env .
 
-# CMD ["/gokey-cURL"]
+# CMD ["/gURL"]
 
 
 # for me (push to docker hub)
 
-# FROM golang:1.22.2 AS builder
+# FROM rust:1.88 AS builder
 
 # COPY . .
 
-# RUN go build -o /gokey-cURL
+# RUN cargo build -o /gURL
 
-# docker image build -t gokey .
-# docker image tag gokey dawitalemu4/gokey:latest
-# docker push dawitalemu4/gokey:latest
+# docker image build -t gURL .
+# docker image tag gURL dawitalemu4/gURL:latest
+# docker push dawitalemu4/gURL:latest
 
 
 # for me (test locally)
 
-FROM golang:1.22.2 AS builder
+FROM rust:1.88 AS builder
 
 COPY . .
 
-RUN go build -o /gokey-cURL
+RUN cargo build -o /gURL
 
 
-FROM golang:1.22.2
+FROM rust:1.88
 
-RUN apt-get update && apt-get install -y curl
+RUN apt-get update && apt-get install -y grpcurl
 
-COPY --from=builder /gokey-cURL /gokey-cURL
+COPY --from=builder /gURL /gURL
 COPY --from=builder /go/views /go/views
+COPY --from=builder /templates /templates 
 
 COPY .env .
 
-CMD ["/gokey-cURL"]
+CMD ["/gURL"]
 
 
 # for me (test published image)
 
-# FROM dawitalemu4/gokey:latest AS builder
+# FROM dawitalemu4/gURL:latest AS builder
 
 
-# # change the next line to FROM --platform=linux/amd64 golang:1.22.2 if you are a mac user and getting this error: "rosetta error: failed to open elf at /lib64/ld-linux-x86-64.so.2"
-# FROM golang:1.22.2
+# # change the next line to FROM --platform=linux/amd64 rust:1.88 if you are a mac user and getting this error: "rosetta error: failed to open elf at /lib64/ld-linux-x86-64.so.2"
+# FROM rust:1.88
 
-# RUN apt-get update && apt-get install -y curl
+# RUN apt-get update && apt-get install -y grpcurl
 
-# COPY --from=builder /gokey-cURL /gokey-cURL
+# COPY --from=builder /gURL /gURL
 # COPY --from=builder /go/views /go/views
+# COPY --from=builder /templates /templates 
 
 # COPY .env .
 
-# CMD ["/gokey-cURL"]
+# CMD ["/gURL"]

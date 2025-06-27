@@ -25,8 +25,8 @@ where
 #[derive(Template)]
 #[template(path = "index.html")]
 pub struct RenderTemplate {
-    pub screen: Option<String>,
-    pub token: Option<String>,
-    pub email: Option<String>,
-    pub deleted: Option<String>,
+    pub screen: &'static str,
+    pub token: &'static str,
+    pub email: &'static str,
+    pub deleted: &'static str,
 }

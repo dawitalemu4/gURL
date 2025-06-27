@@ -13,7 +13,7 @@ use crate::handlers::{ConnectionState, PathParams};
 #[template(path = "components.html", block = "navbar_profile")]
 pub struct NavbarProfileTemplate {
     pub screen: String,
-    pub token: Option<String>,
+    pub token: &'static str,
 }
 
 #[derive(Template)]

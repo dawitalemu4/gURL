@@ -7,12 +7,13 @@ use axum::{
 use miette::{Result, miette};
 
 use crate::handlers::{ConnectionState, PathParams, RequestBody, map_requests, map_single_value};
+use crate::models::request::Request;
 
 pub async fn get_all_requests(
     State(state): ConnectionState,
     Path(path): Path<PathParams>,
 ) -> impl IntoResponse {
-    let result: Result<(StatusCode, Json<Vec<crate::models::request::Request>>)> = (|| {
+    let res: Result<(StatusCode, Json<Vec<Request>>)> = (|| {
         let email = path.email.unwrap_or_default();
         let db = state
             .lock()
@@ -34,7 +35,7 @@ pub async fn get_all_requests(
         }
     })();
 
-    match result {
+    match res {
         Ok(response) => response.into_response(),
         Err(e) => {
             eprintln!("Error in get_all_requests: {e:?}");
@@ -51,7 +52,7 @@ pub async fn get_all_favorite_requests(
     State(state): ConnectionState,
     Path(path): Path<PathParams>,
 ) -> impl IntoResponse {
-    let result: Result<(StatusCode, Json<Vec<Vec<crate::models::request::Request>>>)> = (|| {
+    let res: Result<(StatusCode, Json<Vec<Vec<Request>>>)> = (|| {
         let mut favorite_requests = Vec::new();
         let email = path.email.unwrap_or_default();
         let db = state
@@ -84,7 +85,7 @@ pub async fn get_all_favorite_requests(
         }
     })();
 
-    match result {
+    match res {
         Ok(response) => response.into_response(),
         Err(e) => {
             eprintln!("Error in get_all_favorite_requests: {e:?}");
@@ -102,7 +103,7 @@ pub async fn create_request(
     Path(path): Path<PathParams>,
     extract::Json(body): extract::Json<RequestBody>,
 ) -> impl IntoResponse {
-    let result: Result<(StatusCode, Json<Vec<crate::models::request::Request>>)> = (|| {
+    let res: Result<(StatusCode, Json<Vec<Request>>)> = (|| {
         let email = path.email.unwrap_or_default();
         let request = body.request.unwrap();
         let db = state
@@ -135,7 +136,7 @@ pub async fn create_request(
         }
     })();
 
-    match result {
+    match res {
         Ok(response) => response.into_response(),
         Err(e) => {
             eprintln!("Error in create_request: {e:?}");
@@ -152,7 +153,7 @@ pub async fn hide_request(
     State(state): ConnectionState,
     Path(path): Path<PathParams>,
 ) -> impl IntoResponse {
-    let result: Result<(StatusCode, Json<Vec<crate::models::request::Request>>)> = (|| {
+    let res: Result<(StatusCode, Json<Vec<Request>>)> = (|| {
         let email = path.email.unwrap_or_default();
         let request_id = path.request_id.unwrap_or_default();
         let db = state
@@ -170,11 +171,11 @@ pub async fn hide_request(
                     Ok((StatusCode::OK, Json(res)))
                 }
             }
-            Err(e) => Ok((StatusCode::INTERNAL_SERVER_ERROR, Json(vec![]))),
+            Err(e) => Ok((StatusCode::INTERNAL_SERVER_ERROR, Json("Server Error: {e}"))),
         }
     })();
 
-    match result {
+    match res {
         Ok(response) => response.into_response(),
         Err(e) => {
             eprintln!("Error in hide_request: {e:?}");
