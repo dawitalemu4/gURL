@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
+use std::fmt;
 use validator::Validate;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -10,6 +11,19 @@ pub enum HttpMethod {
     PUT,
     PATCH,
     DELETE,
+}
+
+impl fmt::Display for HttpMethod {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            HttpMethod::GET => write!(f, "GET"),
+            HttpMethod::POST => write!(f, "POST"),
+            HttpMethod::UPDATE => write!(f, "UPDATE"),
+            HttpMethod::PUT => write!(f, "PUT"),
+            HttpMethod::PATCH => write!(f, "PATCH"),
+            HttpMethod::DELETE => write!(f, "DELETE"),
+        }
+    }
 }
 
 impl From<String> for HttpMethod {
