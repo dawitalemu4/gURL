@@ -45,7 +45,7 @@ async fn main() -> Result<()> {
             "/handle/request/favorites/:email",
             get(render_favorites_list),
         )
-        .route("/curl/request", post(execute_curl_request))
+        .route("/grpc/request", post(execute_grpcurl_request))
         .route("/handle/login/:token", get(render_login))
         .route("/handle/signup/:token", get(render_signup))
         .route("/handle/profile/info/:token", get(render_profile_info))

@@ -1,204 +1,100 @@
-<!-- Login Component -->
-{% block login_form %}
-<div id="login-container">
-    <form id="login-form">
-        <br />
-        <div>
-            <label for="email">$  email: </label>
-            <input id="login-email" type="text" name="email" placeholder="_" autofocus required />
-        </div>
-        <br />
-        <div>
-            <label for="password">$  password: </label>
-            <input id="login-password" type="text" name="password" placeholder="_" required />
-        </div>
-        <input type="submit" hidden />
-        <div id="login-response"></div>
-        <div id="login-timer"></div>
-    </form>
-</div>
-{% endblock %}
-
-<!-- Signup Component -->
-{% block signup_form %}
-<div id="signup-container">
-    <form id="signup-form">
-        <br />
-        <div>
-            <label for="username">$  username: </label>
-            <input id="signup-username" type="text" name="username" placeholder="_" autofocus required />
-        </div>
-        <br />
-        <div>
-            <label for="email">$  email: </label>
-            <input id="signup-email" type="text" name="email" placeholder="_" required />
-        </div>
-        <br />
-        <div>
-            <label for="password">$  password: </label>
-            <input id="signup-password" type="text" name="password" placeholder="_" required />
-        </div>
-        <input type="submit" hidden />
-        <div id="signup-response"></div>
-        <div id="signup-timer"></div>
-    </form>
-</div>
-{% endblock %}
-
-<!-- Profile Component -->
-{% block profile_form %}
-<div id="profile-container">
-    <p>$  Profile Info</p>
-    <div id="profile-info"></div>
-    <br />
-    <p>$  Update Profile Info</p>
-    <form id="profile-form">
-        <br />
-        <div>
-            <label for="username">$  username: </label>
-            <input id="profile-username" type="text" name="username" placeholder="_" autofocus required />
-        </div>
-        <br />
-        <div>
-            <label for="password">$  password: </label>
-            <input id="profile-password" type="text" name="password" placeholder="_" required />
-        </div>
-        <input type="submit" hidden />
-        <br />
-        <p onclick="deleteProfile()">$  Delete Profile</p>
-        <div id="profile-response"></div>
-        <div id="profile-timer"></div>
-    </form>
-</div>
-{% endblock %}
-
-<!-- Navbar Profile Component -->
-{% block navbar_profile %}
-{% if token %}
-    <div>
-        <a href="/profile">profile</a>
-        <a href="#" onclick="logout()">logout</a>
+{% block login %}
+    <div id="login-container">
+        <form id="login-form">
+            <br />
+            <div>
+                <label for="email">$  email: </label>
+                <input id="login-email" type="text" name="email" placeholder="_" autofocus required />
+            </div>
+            <br />
+            <div>
+                <label for="password">$  password: </label>
+                <input id="login-password" type="text" name="password" placeholder="_" required />
+            </div>
+            <input type="submit" hidden />
+            <div id="login-response"></div>
+            <div id="login-timer"></div>
+        </form>
     </div>
-{% else %}
-    <div>
-        <a href="/login">login</a>
-        <a href="/signup">signup</a>
+{% endblock %}
+
+{% block signup %}
+    <div id="signup-container">
+        <form id="signup-form">
+            <br />
+            <div>
+                <label for="username">$  username: </label>
+                <input id="signup-username" type="text" name="username" placeholder="_" autofocus required />
+            </div>
+            <br />
+            <div>
+                <label for="email">$  email: </label>
+                <input id="signup-email" type="text" name="email" placeholder="_" required />
+            </div>
+            <br />
+            <div>
+                <label for="password">$  password: </label>
+                <input id="signup-password" type="text" name="password" placeholder="_" required />
+            </div>
+            <input type="submit" hidden />
+            <div id="signup-response"></div>
+            <div id="signup-timer"></div>
+        </form>
     </div>
-{% endif %}
 {% endblock %}
 
-<!-- Username Display Component -->
-{% block username_display %}
-<div id="username">{{ username }}</div>
-{% endblock %}
-
-<!-- New Request Form Component -->
-{% block new_request_form %}
-<div id="new-request-container">
-    <form id="new-request">
+{% block profile %}
+    <div id="profile-container">
+        <p>$  Profile Info</p>
+        <div id="profile-info"></div>
         <br />
-        <div>
-            <label for="method">$  method: </label>
-            <input id="method" type="text" name="method" placeholder="_" autofocus required />
-        </div>
-        <br />
-        <div>
-            <label for="url">$  url: </label>
-            <input id="url" type="text" name="url" placeholder="_" required />
-        </div>
-        <br />
-        <div>
-            <label for="headers">$  headers: </label>
-            <input id="headers" type="text" name="headers" placeholder="_" />
-        </div>
-        <br />
-        <div>
-            <label for="origin">$  origin: </label>
-            <input id="origin" type="text" name="origin" placeholder="_" />
-        </div>
-        <br />
-        <div>
-            <label for="body">$  body: </label>
-            <input id="body" type="text" name="body" placeholder="_" />
-        </div>
-        <input type="submit" hidden />
-        <div id="request-response"></div>
-    </form>
-</div>
-{% endblock %}
-
-<!-- History List Component -->
-{% block history_list %}
-{% if requests.is_empty() %}
-    <br />
-    <p style="margin-left:15px;">$  no history</p>
-{% else %}
-    {% for request in requests %}
-    <div class="history-item" tabindex="0" onclick="fillForm()">
-        <div>
-            <span>{{ request.method }}</span>
-            <span>{{ request.url }}</span>
-        </div>
-        <input type="hidden" name="url" value="{{ request.url }}" />
-        <input type="hidden" name="headers" value="{{ request.headers }}" />
-        <input type="hidden" name="origin" value="{{ request.origin }}" />
-        <input type="hidden" name="body" value="{{ request.body }}" />
+        <p>$  Update Profile Info</p>
+        <form id="profile-form">
+            <br />
+            <div>
+                <label for="username">$  username: </label>
+                <input id="profile-username" type="text" name="username" placeholder="_" autofocus required />
+            </div>
+            <br />
+            <div>
+                <label for="password">$  password: </label>
+                <input id="profile-password" type="text" name="password" placeholder="_" required />
+            </div>
+            <input type="submit" hidden />
+            <br />
+            <p onclick="deleteProfile()">$  Delete Profile</p>
+            <div id="profile-response"></div>
+            <div id="profile-timer"></div>
+        </form>
     </div>
-    {% endfor %}
-{% endif %}
 {% endblock %}
 
-<!-- Favorites List Component -->
-{% block favorites_list %}
-{% if requests.is_empty() %}
-    <br />
-    <p style="margin-left:15px;">$  no favorites</p>
-{% else %}
-    {% for request in requests %}
-    <div class="favorites-item" tabindex="0" onclick="fillForm()">
-        <div>
-            <span>{{ request.method }}</span>
-            <span>{{ request.url }}</span>
-        </div>
-        <input type="hidden" name="url" value="{{ request.url }}" />
-        <input type="hidden" name="headers" value="{{ request.headers }}" />
-        <input type="hidden" name="origin" value="{{ request.origin }}" />
-        <input type="hidden" name="body" value="{{ request.body }}" />
-    </div>
-    {% endfor %}
-{% endif %}
-{% endblock %}
-
-<!-- Index Shortcuts Component -->
 {% block index_shortcuts %}
-<div><kbd>enter</kbd> - send/select request</div>
-<div><kbd>tab</kbd> - next text box</div>
-<div><kbd>shift</kbd> + <kbd>tab</kbd> - previous text box</div>
-<div><kbd>↑</kbd> or <kbd>↓</kbd> - select autofill options</div>
-<div><kbd>ctrl</kbd> + <kbd>alt</kbd> + <kbd>j</kbd> - <span onclick="emptyForm()">empty request</span></div>
-<div><kbd>ctrl</kbd> + <kbd>alt</kbd> + <kbd>h</kbd> - <span onclick="toggleHistoryList()">toggle history list</span></div>
-<div><kbd>ctrl</kbd> + <kbd>alt</kbd> + <kbd>d</kbd> - <span onclick="hideRequest()">remove request from history</span></div>
-<div><kbd>ctrl</kbd> + <kbd>alt</kbd> + <kbd>v</kbd> - <span onclick="toggleFavoritesList()">toggle favorites list</span></div>
-<div><kbd>ctrl</kbd> + <kbd>alt</kbd> + <kbd>f</kbd> - <span onclick="toggleFavoriteItem()">favorite/unfavorite</span></div>
+    <div><kbd>enter</kbd> - send/select request</div>
+    <div><kbd>tab</kbd> - next text box</div>
+    <div><kbd>shift</kbd> + <kbd>tab</kbd> - previous text box</div>
+    <div><kbd>↑</kbd> or <kbd>↓</kbd> - select autofill options</div>
+    <div><kbd>ctrl</kbd> + <kbd>alt</kbd> + <kbd>j</kbd> - <span onclick="emptyForm()">empty request</span></div>
+    <div><kbd>ctrl</kbd> + <kbd>alt</kbd> + <kbd>h</kbd> - <span onclick="toggleHistoryList()">toggle history list</span></div>
+    <div><kbd>ctrl</kbd> + <kbd>alt</kbd> + <kbd>d</kbd> - <span onclick="hideRequest()">remove request from history</span></div>
+    <div><kbd>ctrl</kbd> + <kbd>alt</kbd> + <kbd>v</kbd> - <span onclick="toggleFavoritesList()">toggle favorites list</span></div>
+    <div><kbd>ctrl</kbd> + <kbd>alt</kbd> + <kbd>f</kbd> - <span onclick="toggleFavoriteItem()">favorite/unfavorite</span></div>
 {% endblock %}
 
-<!-- Login Shortcuts Component -->
 {% block login_shortcuts %}
-<div><kbd>enter</kbd> - login</div>
-<div><kbd>tab</kbd> - next text box</div>
-<div><kbd>shift</kbd> + <kbd>tab</kbd> - previous text box</div>
+    <div><kbd>enter</kbd> - login</div>
+    <div><kbd>tab</kbd> - next text box</div>
+    <div><kbd>shift</kbd> + <kbd>tab</kbd> - previous text box</div>
 {% endblock %}
 
-<!-- Signup Shortcuts Component -->
 {% block signup_shortcuts %}
-<div><kbd>enter</kbd> - signup</div>
-<div><kbd>tab</kbd> - next text box</div>
-<div><kbd>shift</kbd> + <kbd>tab</kbd> - previous text box</div>
+    <div><kbd>enter</kbd> - signup</div>
+    <div><kbd>tab</kbd> - next text box</div>
+    <div><kbd>shift</kbd> + <kbd>tab</kbd> - previous text box</div>
 {% endblock %}
 
-<!-- Profile Shortcuts Component -->
 {% block profile_shortcuts %}
-<div><kbd>enter</kbd> - update profile</div>
-<div><kbd>tab</kbd> - next text box</div>
-<div><kbd>shift</kbd> + <kbd>tab</kbd> - previous text box</div>
+    <div><kbd>enter</kbd> - update profile</div>
+    <div><kbd>tab</kbd> - next text box</div>
+    <div><kbd>shift</kbd> + <kbd>tab</kbd> - previous text box</div>
 {% endblock %}

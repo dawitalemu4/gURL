@@ -456,6 +456,7 @@ dependencies = [
  "dotenv",
  "jsonwebtoken",
  "miette",
+ "regex",
  "rusqlite",
  "serde",
  "serde_json",
