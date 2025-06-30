@@ -15,6 +15,8 @@ async fn main() -> Result<()> {
         .await
         .map_err(|e| miette!("Tokio unable to listen on port {port}: {e}"))?;
 
+    println!("gURL started at 127.0.0.1:{port}");
+
     axum::serve(listener, router)
         .await
         .map_err(|e| miette!("Axum unable to serve gURL router: {e}"))?;

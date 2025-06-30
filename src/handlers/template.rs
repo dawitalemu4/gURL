@@ -1,201 +1,189 @@
-use std::time::{Duration, SystemTime};
-
 use askama::Template;
 use axum::{
-    extract::Path,
+    extract::{Path, Request, State},
     http::StatusCode,
     response::{Html, IntoResponse, Response},
 };
-use humantime::format_duration;
 use miette::{Result, miette};
 
 use crate::{
-    handlers::{PathParams, map_requests, map_single_value},
+    handlers::{ConnectionState, PathParams, get_all_requests},
     parse_jwt,
 };
 
-#[derive(Template)]
-#[template(path = "base.html")]
+#[derive(Template, Debug)]
+#[template(path = "index.html")]
 pub struct IndexTemplate {
-    pub screen: String,
-    pub user: Option<User>,
-    pub email: String,
+    screen: String,
+    index_active: String,
 }
 
-#[derive(Template)]
-#[template(path = "components.html")]
-pub struct ComponentsTemplate;
-
-pub async fn render_page(Path(path): Path<PathParams>) -> Response {
+pub async fn render_page(request: Request) -> Response {
     let res: Result<Response> = (|| {
-        let screen = path.screen.unwrap_or("index".to_string());
-        let token = path.token.unwrap_or("null".to_string());
-        let email = path.email.unwrap_or("anon".to_string());
-
-        let user = match parse_jwt(&token) {
-            Ok(user) => user,
-            Err(_) => None,
+        let screen = match request.uri().to_string().as_str() {
+            "/" => "index".to_string(),
+            screen => screen.to_string(),
+        };
+        let index_active = match screen.as_str() {
+            "index" => "navbar-active".to_string(),
+            _ => "".to_string(),
         };
 
         let template = IndexTemplate {
             screen,
-            user,
-            email,
+            index_active,
         };
 
-        match template.render() {
-            Ok(html) => Ok(Html(html).into_response()),
-            Err(e) => Ok((
-                StatusCode::INTERNAL_SERVER_ERROR,
-                format!("Template error: {e}"),
-            )
-                .into_response()),
+        let html = template
+            .render()
+            .map_err(|e| miette!("Server Error: {e}"))?;
+
+        Ok((StatusCode::OK, Html(html)).into_response())
+    })();
+
+    match res {
+        Ok(res) => res,
+        Err(e) => panic!("Server Error: {e}"),
+    }
+}
+
+pub async fn render_navbar(Path(path): Path<PathParams>) -> Response {
+    let res: Result<Response> = (|| {
+        let token = path.token.unwrap_or("null".to_string());
+        let page = path.page.unwrap_or("index".to_string());
+
+        let mut pages = std::collections::HashMap::new();
+        pages.insert("login", "");
+        pages.insert("signup", "");
+        pages.insert("profile", "");
+        pages.insert(&page, "navbar-active");
+
+        if token == "null".to_string() {
+            let html = format!(
+                r#"
+                    <a id="{}" href="/login">login /</a>
+                    <a id="{}" href="/signup">/ signup</a>
+                "#,
+                pages.get("login").unwrap_or(&""),
+                pages.get("signup").unwrap_or(&"")
+            );
+
+            Ok((StatusCode::OK, Html(html)).into_response())
+        } else {
+            let user = parse_jwt(&token)?;
+            let html = format!(
+                r#"
+                    <a id="{}" href="/profile">{} /</a>
+                    <a onclick="logout();">/ logout</a>
+                "#,
+                pages.get("profile").unwrap_or(&""),
+                user.username
+            );
+
+            Ok((StatusCode::OK, Html(html)).into_response())
         }
     })();
 
     match res {
         Ok(res) => res,
-        Err(e) => (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            format!("Server error: {e}"),
-        )
-            .into_response(),
-    }
-}
-
-pub async fn render_navbar(Path(path): Path<PathParams>) -> Response {
-    let token_string = path.token.unwrap_or("null".to_string());
-    let page = path.page.unwrap_or("index".to_string());
-
-    let mut pages = std::collections::HashMap::new();
-    pages.insert("login", "");
-    pages.insert("signup", "");
-    pages.insert("profile", "");
-    pages.insert(&page, "navbar-active");
-
-    match parse_jwt(&token_string) {
-        Err(e) if e.to_string() == blank_token_error().to_string() => {
-            let html = format!(
-                r#"<a id="{}" href="/login">login /</a>
-                   <a id="{}" href="/signup">/ signup</a>"#,
-                pages.get("login").unwrap_or(&""),
-                pages.get("signup").unwrap_or(&"")
-            );
-            Html(html).into_response()
-        }
-        Err(e) => (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            format!("$  Server Error: {}", e),
-        )
-            .into_response(),
-        Ok(Some(user)) => {
-            let html = format!(
-                r#"<a id="{}" href="/profile">{} /</a>
-                   <a onclick="logout();">/ logout</a>"#,
-                pages.get("profile").unwrap_or(&""),
-                user.username
-            );
-            Html(html).into_response()
-        }
-        Ok(None) => {
-            let html = format!(
-                r#"<a id="{}" href="/login">login /</a>
-                   <a id="{}" href="/signup">/ signup</a>"#,
-                pages.get("login").unwrap_or(&""),
-                pages.get("signup").unwrap_or(&"")
-            );
-            Html(html).into_response()
-        }
+        Err(e) => panic!("Server Error: {e}"),
     }
 }
 
 pub async fn render_username(Path(path): Path<PathParams>) -> Response {
-    let token_string = path.token.unwrap_or("null".to_string());
+    let res: Result<Response> = (|| {
+        let token = path.token.unwrap_or("null".to_string());
 
-    match parse_jwt(&token_string) {
-        Err(e) if e.to_string() == blank_token_error().to_string() => {
-            Html("<p>$  hello anon! Signup or login to save your favorite requests and organize your request history in your own profiles</p>".to_string()).into_response()
+        if token == "null".to_string() {
+            let html = "<p>$  hello anon! Signup or login to save your favorite requests and organize your request history in your own profiles</p>";
+            Ok((StatusCode::OK, Html(html)).into_response())
+        } else {
+            let user = parse_jwt(&token)?;
+            Ok((
+                StatusCode::OK,
+                format!("<p>$  hello {}!</p>", user.username),
+            )
+                .into_response())
         }
-        Err(e) => (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            format!("$  Server Error: {}", e),
-        ).into_response(),
-        Ok(Some(user)) => {
-            Html(format!("<p>$  hello {}!</p>", user.username)).into_response()
-        }
-        Ok(None) => {
-            Html("<p>$  hello anon!</p>".to_string()).into_response()
-        }
+    })();
+
+    match res {
+        Ok(res) => res,
+        Err(e) => panic!("Server Error: {e}"),
     }
 }
 
 pub async fn render_login(Path(path): Path<PathParams>) -> Response {
-    let token_string = path.token.unwrap_or("null".to_string());
+    let res: Result<Response> = (|| {
+        let token = path.token.unwrap_or("null".to_string());
 
-    match parse_jwt(&token_string) {
-        Err(e) if e.to_string() == blank_token_error().to_string() => {
-            Html("<p>$  incorrect credentials</p>".to_string()).into_response()
+        if token == "null".to_string() {
+            Ok((StatusCode::OK, Html("<p>$  incorrect credentials</p>")).into_response())
+        } else {
+            let user = parse_jwt(&token)?;
+            Ok((
+                StatusCode::OK,
+                Html(format!("<p>$  welcome back {}!</p>", user.username)),
+            )
+                .into_response())
         }
-        Err(e) => (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            format!("$  Server Error: {}", e),
-        )
-            .into_response(),
-        Ok(Some(user)) => {
-            Html(format!("<p>$  welcome back {}!</p>", user.username)).into_response()
-        }
-        Ok(None) => Html("<p>$  incorrect credentials</p>".to_string()).into_response(),
+    })();
+
+    match res {
+        Ok(res) => res,
+        Err(e) => panic!("Server Error: {e}"),
     }
 }
 
 pub async fn render_signup(Path(path): Path<PathParams>) -> Response {
-    let token_string = path.token.unwrap_or("null".to_string());
+    let res: Result<Response> = (|| {
+        let token = path.token.unwrap_or("null".to_string());
 
-    match parse_jwt(&token_string) {
-        Err(e) if e.to_string() == blank_token_error().to_string() => {
-            Html("<p>$  invalid input</p>".to_string()).into_response()
+        if token == "null".to_string() {
+            Ok((StatusCode::OK, Html("<p>$  invalid input</p>".to_string())).into_response())
+        } else {
+            let user = parse_jwt(&token)?;
+
+            Ok((
+                StatusCode::OK,
+                Html(format!(
+                    "<p>$  account created! username: {}, email: {}</p>",
+                    user.username, user.email
+                )),
+            )
+                .into_response())
         }
-        Err(e) => (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            format!("$  Server Error: {}", e),
-        )
-            .into_response(),
-        Ok(Some(user)) => Html(format!(
-            "<p>$  account created! username: {}, email: {}</p>",
-            user.username, user.email
-        ))
-        .into_response(),
-        Ok(None) => Html("<p>$  invalid input</p>".to_string()).into_response(),
+    })();
+
+    match res {
+        Ok(res) => res,
+        Err(e) => panic!("Server Error: {e}"),
     }
 }
 
 pub async fn render_profile_info(Path(path): Path<PathParams>) -> Response {
-    let token_string = path.token.unwrap_or("null".to_string());
+    let res: Result<Response> = (|| {
+        let token = path.token.unwrap_or("null".to_string());
 
-    match parse_jwt(&token_string) {
-        Err(e) if e.to_string() == blank_token_error().to_string() => {
-            Html("<p>$  invalid token</p>".to_string()).into_response()
+        if token == "null".to_string() {
+            Ok((StatusCode::OK, Html("<p>$  invalid token</p>")).into_response())
+        } else {
+            let user = parse_jwt(&token)?;
+
+            Ok((
+                StatusCode::OK,
+                Html(format!(
+                    "<p>$  username: {}, email: {}, user since {}</p>",
+                    user.username, user.email, user_since
+                )),
+            )
+                .into_response())
         }
-        Err(e) => (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            format!("$  Server Error: {}", e),
-        )
-            .into_response(),
-        Ok(Some(user)) => {
-            let date_ms: i64 = user.date.parse().unwrap_or(0);
-            let datetime =
-                Duration::from_timestamp_millis(date_ms).unwrap_or_else(|| SystemTime::now());
+    })();
 
-            // You'll need to implement humanize time functionality
-            let user_since = format_duration(datetime);
-
-            Html(format!(
-                "<p>$  username: {}, email: {}, user since {}</p>",
-                user.username, user.email, user_since
-            ))
-            .into_response()
-        }
-        Ok(None) => Html("<p>$  invalid token</p>".to_string()).into_response(),
+    match res {
+        Ok(res) => res,
+        Err(e) => panic!("Server Error: {e}"),
     }
 }
 
@@ -277,42 +265,23 @@ pub async fn render_new_request(Path(path): Path<PathParams>) -> Response {
             -H '<input name="origin" type="text" placeholder="origin" />' \\ <br />
             -d '<textarea name="body" type="text" placeholder="body"></textarea>' \\ <br />
             <input name="url" type="text" placeholder="url" required />
-            <input name="user_email" value="{}" hidden />
+            <input name="user_email" value="{email}" hidden />
             <input type="submit" hidden />
         </form>
         <div id="request-response "></div>
-        "##,
-        email
+        "##
     );
 
     Html(html).into_response()
 }
 
-pub async fn render_history_list(Path(path): Path<PathParams>) -> Response {
+pub async fn render_history_list(
+    State(state): State<ConnectionState>,
+    Path(path): Path<PathParams>,
+) -> Response {
     let res: Result<Response> = (|| {
         let email = path.email.unwrap_or("anon".to_string());
-
-        let rows = match db.prepare(
-            "SELECT * FROM request WHERE user_email = ?1 AND hidden = false ORDER BY id DESC",
-        ) {
-            Ok(rows) => rows,
-            Err(e) => {
-                return Ok((
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    format!("Server error: {e}"),
-                )
-                    .into_response());
-            }
-        };
-
-        let requests = map_requests(rows, &[email])?;
-
-        if requests.is_empty() {
-            return Ok(
-                Html(r#"<br /><p style="margin-left:15px;">$  no history</p>"#.to_string())
-                    .into_response(),
-            );
-        }
+        let requests = get_all_requests(state, path);
 
         let status_colors = std::collections::HashMap::from([
             ("1", "green"),
@@ -325,10 +294,8 @@ pub async fn render_history_list(Path(path): Path<PathParams>) -> Response {
         let mut html_history_list = String::new();
 
         for (i, request) in requests.iter().enumerate() {
-            let date_ms: i64 = request.date.parse().unwrap_or(0);
-            let datetime =
-                Duration::from_timestamp_millis(date_ms).unwrap_or_else(|| SystemTime::now());
-            let formatted_date = format_duration(datetime);
+            let date_ms: u64 = request.date.parse().unwrap_or(0);
+            let formatted_date = format_duration(Duration::from_millis(date_ms));
 
             let status_color = status_colors
                 .get(
@@ -450,10 +417,8 @@ pub async fn render_favorites_list(Path(path): Path<PathParams>) -> Response {
         let mut html_favorites_list = String::new();
 
         for (i, request) in favorite_requests.iter().enumerate() {
-            let date_ms: i64 = request.date.parse().unwrap_or(0);
-            let datetime =
-                Duration::from_timestamp_millis(date_ms).unwrap_or_else(|| SystemTime::now());
-            let formatted_date = format_duration(datetime);
+            let date_ms: u64 = request.date.parse().unwrap_or(0);
+            let formatted_date = format_duration(Duration::from_millis(date_ms));
 
             let status_color = status_colors
                 .get(

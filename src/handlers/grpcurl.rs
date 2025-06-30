@@ -57,7 +57,7 @@ pub async fn execute_grpcurl_request(
     Path(path): Path<PathParams>,
     Json(body): Json<RequestBody>,
 ) -> Response {
-    let res: Result<Response> = (|| {
+    let res: Result<Response> = (async || {
         let request = body
             .request
             .clone()
@@ -93,7 +93,7 @@ pub async fn execute_grpcurl_request(
                 request: Some(final_request),
                 user: None,
             }),
-        );
+        ).await;
 
         if exit_code == 1 && error.contains("connection refused") {
             return Ok((StatusCode::OK, Html(format!(
@@ -143,7 +143,7 @@ pub async fn execute_grpcurl_request(
         );
 
         Ok((StatusCode::OK, Html(html_response)).into_response())
-    })();
+    })().await;
 
     match res {
         Ok(res) => res,

@@ -1,6 +1,0 @@
-#!/bin/sh
-set -e
-for file in ($git diff --name-only --cached | grep '\.rs$'); do
-    rustfmt --edition 2024 $file
-    git add "$file"
-done

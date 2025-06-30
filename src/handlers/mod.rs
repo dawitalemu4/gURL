@@ -1,6 +1,8 @@
 use std::sync::{Arc, Mutex};
+use std::time::{Duration, SystemTime};
 
 use axum::extract::State;
+use humantime::format_duration;
 use miette::{Result, miette};
 use rusqlite::{Connection, Statement, params_from_iter};
 use serde::{Deserialize, Serialize};
@@ -130,4 +132,12 @@ pub fn serialize_favorites_for_db(favorites: &Option<Vec<i32>>) -> String {
         }
         None => String::new(),
     }
+}
+
+pub fn humanize_date(date: Option<String>) -> Result<String> {
+    let date_ms: u64 = date
+        .unwrap_or(SystemTime::now())
+        .parse()
+        .map_err(|e| miette!("Could not parse date: {e}"))?;
+    Ok(format_duration(Duration::from_millis(date_ms)).to_string())
 }

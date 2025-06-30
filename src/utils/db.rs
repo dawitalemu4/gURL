@@ -16,7 +16,13 @@ pub fn db(init: bool, test: bool) -> Result<Connection> {
     };
 
     if init {
-        println!("sqlite database file located at {:?}", connection.path());
+        let db_path = match connection.path() {
+            Some("") => "in memory".to_string(),
+            Some(path) => format!("at {path}"),
+            None => panic!("sqlite connection path is non-existent"),
+        };
+
+        println!("sqlite database file located at {db_path}");
         let db_empty = connection
             .table_exists(Some("gURL"), "request")
             .map_err(|e| miette!("Could not query request table{e}"))?;

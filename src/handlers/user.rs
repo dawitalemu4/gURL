@@ -16,11 +16,7 @@ pub async fn get_user(State(state): ConnectionState, Json(body): Json<RequestBod
             .lock()
             .map_err(|e| miette!("Global db can't block current thread {e}"))?;
 
-        match db.prepare(
-            r#"
-            SELECT * FROM "user" WHERE email = ?1 AND deleted = false
-        "#,
-        ) {
+        match db.prepare(r#"SELECT * FROM "user" WHERE email = ?1 AND deleted = false"#) {
             Ok(rows) => {
                 let parsed_user = map_user(rows, &[email])?;
 
@@ -68,9 +64,9 @@ pub async fn create_user(State(state): ConnectionState, Json(body): Json<Request
 
         match db.prepare(
             r#"
-            INSERT INTO "user" (username, email, password, favorites, date, oldPassword, deleted) 
-            VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7) RETURNING *
-        "#,
+                INSERT INTO "user" (username, email, password, favorites, date, oldPassword, deleted) 
+                VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7) RETURNING *
+            "#,
         ) {
             Ok(rows) => {
                 let user = map_user(
@@ -111,11 +107,7 @@ pub async fn update_user(State(state): ConnectionState, Json(body): Json<Request
 
         user.password = hash_password(&user.password)?;
 
-        match db.prepare(
-            r#"
-            UPDATE "user" SET username = ?1, password = ?2 WHERE email = ?3
-        "#,
-        ) {
+        match db.prepare(r#"UPDATE "user" SET username = ?1, password = ?2 WHERE email = ?3"#) {
             Ok(rows) => {
                 let user = map_user(rows, &[user.username, user.password, user.email])?;
 
@@ -172,11 +164,8 @@ pub async fn update_favorites(
             .lock()
             .map_err(|e| miette!("Global db can't block current thread {e}"))?;
 
-        match db.prepare(
-            r#"
-            UPDATE "user" SET favorites = ?1 WHERE email = ?2 AND deleted = false
-        "#,
-        ) {
+        match db.prepare(r#"UPDATE "user" SET favorites = ?1 WHERE email = ?2 AND deleted = false"#)
+        {
             Ok(rows) => {
                 let user = map_user(
                     rows,
