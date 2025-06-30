@@ -8,13 +8,11 @@ use serde_with::{NoneAsEmptyString, serde_as, skip_serializing_none};
 use validator::Validate;
 
 pub mod grpcurl;
-pub mod render;
 pub mod request;
 pub mod template;
 pub mod user;
 
 pub use grpcurl::*;
-pub use render::*;
 pub use request::*;
 pub use template::*;
 pub use user::*;
@@ -25,19 +23,22 @@ pub type ConnectionState = State<Arc<Mutex<Connection>>>;
 
 #[serde_as]
 #[skip_serializing_none]
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, Validate)]
 pub struct PathParams {
-    // #[validate(email)]
+    #[validate(email)]
     #[serde_as(as = "NoneAsEmptyString")]
     email: Option<String>,
+    #[validate(length(min = 1))]
+    #[serde_as(as = "NoneAsEmptyString")]
+    password: Option<String>,
     #[serde(rename = "reqID")]
-    // #[validate(length(min = 1))]
+    #[validate(length(min = 1))]
     #[serde_as(as = "NoneAsEmptyString")]
     request_id: Option<String>,
-    // #[validate(length(min = 1))]
-    // #[serde_as(as = "NoneAsEmptyString")]
+    #[validate(length(min = 1))]
+    #[serde_as(as = "NoneAsEmptyString")]
     token: Option<String>,
-    // #[validate(length(min = 1))]
+    #[validate(length(min = 1))]
     #[serde_as(as = "NoneAsEmptyString")]
     page: Option<String>,
     deleted: Option<bool>,
@@ -60,12 +61,13 @@ pub fn map_requests(mut statement: Statement<'_>, args: &[String]) -> Result<Vec
                 user_email: row.get::<_, Option<String>>(1)?,
                 url: row.get(2)?,
                 method: row.get::<_, String>(3)?.into(),
-                origin: row.get::<_, Option<String>>(4)?,
-                headers: row.get::<_, Option<String>>(5)?,
-                body: row.get::<_, Option<String>>(6)?,
-                status: row.get(7)?,
-                date: row.get(8)?,
-                hidden: row.get(9)?,
+                metadata: row.get::<_, Option<String>>(4)?,
+                payload: row.get::<_, Option<String>>(5)?,
+                status: row.get(6)?,
+                date: row.get(7)?,
+                service: row.get::<_, Option<String>>(8)?,
+                proto_file: row.get::<_, Option<String>>(9)?,
+                hidden: row.get(10)?,
             })
         })
         .map_err(|e| miette!("Error mapping rows to Request: {e}"))?
@@ -89,7 +91,7 @@ pub fn map_single_value(
     Ok(parsed_rows)
 }
 
-pub fn map_user(mut statement: Statement<'_>, args: &[String]) -> Result<Vec<User>> {
+pub fn map_user(mut statement: Statement<'_>, args: &[String]) -> Result<User> {
     let parsed_rows = statement
         .query_map(params_from_iter(args), |row| {
             let favorites_str: Option<String> = row.get(3)?;
@@ -113,7 +115,7 @@ pub fn map_user(mut statement: Statement<'_>, args: &[String]) -> Result<Vec<Use
         .map(|item| item.expect("Cannot unwrap User row item"))
         .collect::<Vec<_>>();
 
-    Ok(parsed_rows)
+    Ok(parsed_rows[0].clone())
 }
 
 pub fn serialize_favorites_for_db(favorites: &Option<Vec<i32>>) -> String {

@@ -1,4 +1,4 @@
-{% include "components.html" %}
+{% extends "base.html" %}
 
 {% block head %}
     <meta charset="UTF-8">
@@ -12,7 +12,7 @@
     <script src="/js/shortcuts.js" defer></script>
     <link rel="icon" href="/public/favicon.ico">
     <title>gURL</title>
-{% endblock %}
+{% endblock head %}
 
 {% block body %}
 <!-- do this on server -->
@@ -38,11 +38,11 @@
             <div id="history-modal"></div>
             <div id="favorites-modal"></div>
         {% elif screen == "login" %}
-            {% block login_form %}{% endblock %}
+            {% block login_form %}{% endblock login_form %}
         {% elif screen == "signup" %}
-            {% block signup_form %}{% endblock %}
+            {% block signup_form %}{% endblock signup_form %}
         {% elif screen == "profile" %}
-            {% block profile_form %}{% endblock %}
+            {% block profile_form %}{% endblock profile_form %}
         {% endif %}
     </div>
 </div>
@@ -50,13 +50,13 @@
 <div id="shortcuts">
     <div id="shortcuts-modal">
         {% if screen == "index" %}
-            {% block index_shortcuts %}{% endblock %}
+            {% block index_shortcuts %}{% endblock index_shortcuts %}
         {% elif screen == "login" %}
-            {% block login_shortcuts %}{% endblock %}
+            {% block login_shortcuts %}{% endblock login_shortcuts %}
         {% elif screen == "signup" %}
-            {% block signup_shortcuts %}{% endblock %}
+            {% block signup_shortcuts %}{% endblock signup_shortcuts %}
         {% elif screen == "profile" %}
-            {% block profile_shortcuts %}{% endblock %}
+            {% block profile_shortcuts %}{% endblock profile_shortcuts %}
         {% endif %}           
     </div>
     <div id="shortcuts-toggle-modal">
@@ -68,4 +68,4 @@
     <p>don't use your phone to test your api🤦</p>
     <p>go to <a href="https://gokey.github.io">gokey.github.io</a> for demos, docs, and download guides</p>
 </div>
-{% endblock %}
+{% endblock body %}
