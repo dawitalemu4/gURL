@@ -4,24 +4,24 @@ use miette::{Result, miette};
 use serde::{Deserialize, Serialize};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use crate::utils::env::env;
+use crate::{models::user::User, utils::env::env};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Claims {
-    pub sub: String, // email
-    pub exp: u64,    // expiration time
-    pub iat: u64,    // issued at
+    pub sub: User, // email
+    pub exp: u64,  // expiration time
+    pub iat: u64,  // issued at
 }
 
 pub fn hash_password(password: &str) -> Result<String> {
     hash(password, DEFAULT_COST).map_err(|e| miette!("Failed to hash password: {e}"))
 }
 
-pub fn verify_password(password: &str, hash: &str) -> Result<bool> {
-    verify(password, hash).map_err(|e| miette!("Failed to verify password: {e}"))
+pub fn verify_password(password: &str, hashed_password: &str) -> Result<bool> {
+    verify(password, hashed_password).map_err(|e| miette!("Failed to verify password: {e}"))
 }
 
-pub fn generate_jwt(email: &str) -> Result<String> {
+pub fn create_jwt(user: User) -> Result<String> {
     let env = env()?;
     let now = SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -29,8 +29,8 @@ pub fn generate_jwt(email: &str) -> Result<String> {
         .as_secs();
 
     let claims = Claims {
-        sub: email.to_string(),
-        exp: now + (24 * 60 * 60), // 24 hours
+        sub: user,
+        exp: now + (24 * 60 * 60 * 504),
         iat: now,
     };
 
@@ -42,7 +42,7 @@ pub fn generate_jwt(email: &str) -> Result<String> {
     .map_err(|e| miette!("Failed to generate JWT: {e}"))
 }
 
-pub fn validate_jwt(token: &str) -> Result<Claims> {
+pub fn parse_jwt(token: &str) -> Result<User> {
     let env = env()?;
     let token_data = decode::<Claims>(
         token,
@@ -51,13 +51,5 @@ pub fn validate_jwt(token: &str) -> Result<Claims> {
     )
     .map_err(|e| miette!("Invalid JWT token: {e}"))?;
 
-    Ok(token_data.claims)
-}
-
-pub fn extract_token_from_header(auth_header: &str) -> Result<String> {
-    if auth_header.starts_with("Bearer ") {
-        Ok(auth_header[7..].to_string())
-    } else {
-        Err(miette!("Invalid authorization header format"))
-    }
+    Ok(token_data.claims.sub)
 }

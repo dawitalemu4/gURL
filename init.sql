@@ -5,10 +5,11 @@ CREATE TABLE IF NOT EXISTS request (
     user_email TEXT NOT NULL,
     url TEXT NOT NULL,
     method TEXT NOT NULL,
-    origin TEXT,
-    headers TEXT,
-    body TEXT,
+    metadata TEXT,
+    payload TEXT,
     status TEXT NOT NULL,
+    service TEXT,
+    proto_file TEXT,
     date TEXT NOT NULL,
     hidden INTEGER NOT NULL
 );

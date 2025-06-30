@@ -4,37 +4,34 @@ use std::fmt;
 use validator::Validate;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub enum HttpMethod {
-    GET,
-    POST,
-    UPDATE,
-    PUT,
-    PATCH,
-    DELETE,
+pub enum GrpcMethod {
+    Unary,
+    ServerStreaming,
+    ClientStreaming,
+    BidirectionalStreaming,
+    Custom(String),
 }
 
-impl fmt::Display for HttpMethod {
+impl fmt::Display for GrpcMethod {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            HttpMethod::GET => write!(f, "GET"),
-            HttpMethod::POST => write!(f, "POST"),
-            HttpMethod::UPDATE => write!(f, "UPDATE"),
-            HttpMethod::PUT => write!(f, "PUT"),
-            HttpMethod::PATCH => write!(f, "PATCH"),
-            HttpMethod::DELETE => write!(f, "DELETE"),
+            GrpcMethod::Unary => write!(f, "unary"),
+            GrpcMethod::ServerStreaming => write!(f, "server-streaming"),
+            GrpcMethod::ClientStreaming => write!(f, "client-streaming"),
+            GrpcMethod::BidirectionalStreaming => write!(f, "bidi-streaming"),
+            GrpcMethod::Custom(method) => write!(f, "{}", method),
         }
     }
 }
 
-impl From<String> for HttpMethod {
+impl From<String> for GrpcMethod {
     fn from(s: String) -> Self {
-        match s.to_uppercase().as_str() {
-            "GET" => HttpMethod::GET,
-            "POST" => HttpMethod::POST,
-            "PUT" => HttpMethod::PUT,
-            "DELETE" => HttpMethod::DELETE,
-            "PATCH" => HttpMethod::PATCH,
-            _ => unimplemented!("Method is not supported"),
+        match s.to_lowercase().as_str() {
+            "unary" => GrpcMethod::Unary,
+            "server-streaming" => GrpcMethod::ServerStreaming,
+            "client-streaming" => GrpcMethod::ClientStreaming,
+            "bidirectional-streaming" | "bidi-streaming" => GrpcMethod::BidirectionalStreaming,
+            _ => GrpcMethod::Custom(s),
         }
     }
 }
@@ -45,14 +42,15 @@ pub struct Request {
     pub id: i32,
     #[validate(email)]
     pub user_email: Option<String>,
-    #[validate(url)]
+    #[validate(length(min = 1))]
     pub url: String,
-    pub method: HttpMethod,
-    pub origin: Option<String>,
-    pub headers: Option<String>,
-    pub body: Option<String>,
+    pub method: GrpcMethod,
+    pub metadata: Option<String>,
+    pub payload: Option<String>,
     #[validate(length(min = 1))]
     pub status: String,
+    pub service: Option<String>,
+    pub proto_file: Option<String>,
     #[validate(length(min = 1))]
     pub date: String,
     pub hidden: bool,

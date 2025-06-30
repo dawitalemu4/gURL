@@ -5,10 +5,15 @@ use rusqlite::Connection;
 
 use crate::utils::env::env;
 
-pub fn db(init: bool) -> Result<Connection> {
-    let env = env()?;
-    let connection = Connection::open(env.db_path)
-        .map_err(|e| miette!("sqlite connection could not be opened: {e}"))?;
+pub fn db(init: bool, test: bool) -> Result<Connection> {
+    let connection = if test {
+        Connection::open_in_memory()
+            .map_err(|e| miette!("sqlite connection could not be opened: {e}"))?
+    } else {
+        let env = env()?;
+        Connection::open(env.db_path)
+            .map_err(|e| miette!("sqlite connection could not be opened: {e}"))?
+    };
 
     if init {
         println!("sqlite database file located at {:?}", connection.path());
