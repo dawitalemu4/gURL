@@ -58,11 +58,7 @@ pub async fn get_all_favorite_requests(
             .lock()
             .map_err(|e| miette!("Global db can't block current thread {e}"))?;
 
-        let favorite_rows = match db.prepare(
-            r#"
-            SELECT favorites FROM "user" WHERE email = ?1
-        "#,
-        ) {
+        let favorite_rows = match db.prepare(r#"SELECT favorites FROM "user" WHERE email = ?1"#) {
             Ok(rows) => rows,
             Err(e) => {
                 return Ok((
@@ -170,9 +166,7 @@ pub async fn hide_request(State(state): ConnectionState, Path(path): Path<PathPa
             .map_err(|e| miette!("Global db can't block current thread {e}"))?;
 
         match db.prepare(
-            r#"
-            UPDATE request SET hidden = true WHERE user_email = ?1 AND id = ?2 RETURNING *
-        "#,
+            "UPDATE request SET hidden = true WHERE user_email = ?1 AND id = ?2 RETURNING *",
         ) {
             Ok(rows) => {
                 let request = map_requests(rows, &[email, request_id])?[0].clone();
