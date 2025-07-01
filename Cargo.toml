@@ -15,6 +15,7 @@ unused_lifetimes = "warn"
 unused_qualifications = "warn"
 unused_macro_rules = "warn"
 variant_size_differences = "warn"
+non_snake_case = "allow"
 
 [lints.clippy]
 default_union_representation = "deny"

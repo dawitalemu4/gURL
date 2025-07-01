@@ -35,7 +35,7 @@ async fn test_axum_request(
 
 #[tokio::test]
 async fn test_healthcheck_route() -> Result<()> {
-    let res = test_axum_request("healthcheck", "GET", None, None).await?;
+    let res = test_axum_request("api/healthcheck", "GET", None, None).await?;
 
     assert_eq!(res.status(), StatusCode::OK);
 

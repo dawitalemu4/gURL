@@ -4,7 +4,7 @@ use axum::{
     Router,
     routing::{delete, get, patch, post, put},
 };
-use tower_http::services::{ServeDir, ServeFile};
+use tower_http::services::ServeDir;
 
 use crate::handlers::*;
 
@@ -47,10 +47,7 @@ pub fn init_router(global_db: Arc<Mutex<rusqlite::Connection>>) -> Router {
             "/handle/profile/delete/{deleted}",
             get(render_profile_delete),
         )
-        .nest_service("/public", ServeDir::new("src/views/public"))
-        .nest_service("/robots.txt", ServeFile::new("src/views/public/robots.txt"))
-        .nest_service("/css", ServeDir::new("src/views/css"))
-        .nest_service("/js", ServeDir::new("src/views/js"))
+        .nest_service("/public", ServeDir::new("public"))
         // Healtcheck route
         .route("/api/healthcheck", get("gURL is healthy"))
         .with_state(global_db)

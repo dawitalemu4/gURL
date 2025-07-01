@@ -80,6 +80,12 @@ html, body {
     user-select: none;
 }
 
+#terminal-header:first-child {
+    position: absolute;
+    left: 2.5px;
+    font-size: 16px;
+}
+
 #terminal-header img {
     position: absolute;
     top: 2.5px;

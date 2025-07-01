@@ -1,12 +1,12 @@
 use std::sync::{Arc, Mutex};
-use std::time::{Duration, SystemTime};
+use std::time::Duration;
 
-use axum::extract::State;
+use axum::extract::{Path, State};
 use humantime::format_duration;
 use miette::{Result, miette};
 use rusqlite::{Connection, Statement, params_from_iter};
 use serde::{Deserialize, Serialize};
-use serde_with::{NoneAsEmptyString, serde_as, skip_serializing_none};
+use serde_with::{serde_as, skip_serializing_none};
 use validator::Validate;
 
 pub mod grpcurl;
@@ -28,20 +28,15 @@ pub type ConnectionState = State<Arc<Mutex<Connection>>>;
 #[derive(Serialize, Deserialize, Debug, Clone, Validate)]
 pub struct PathParams {
     #[validate(email)]
-    #[serde_as(as = "NoneAsEmptyString")]
     email: Option<String>,
     #[validate(length(min = 1))]
-    #[serde_as(as = "NoneAsEmptyString")]
     password: Option<String>,
     #[serde(rename = "reqID")]
     #[validate(length(min = 1))]
-    #[serde_as(as = "NoneAsEmptyString")]
     request_id: Option<String>,
     #[validate(length(min = 1))]
-    #[serde_as(as = "NoneAsEmptyString")]
     token: Option<String>,
     #[validate(length(min = 1))]
-    #[serde_as(as = "NoneAsEmptyString")]
     page: Option<String>,
     deleted: Option<bool>,
 }
@@ -53,6 +48,65 @@ pub struct RequestBody {
     request: Option<Request>,
     #[validate(nested)]
     user: Option<User>,
+}
+
+pub async fn get_all_requests_from_db(
+    state: ConnectionState,
+    Path(path): Path<PathParams>,
+) -> Result<Vec<Request>> {
+    let email = path.email.unwrap_or("anon".to_string());
+    let db = state
+        .lock()
+        .map_err(|e| miette!("Global db can't block current thread {e}"))?;
+
+    match db
+        .prepare("SELECT * FROM request WHERE user_email = ?1 AND hidden = false ORDER BY id DESC")
+    {
+        Ok(rows) => {
+            let requests = map_requests(rows, &[email])?;
+
+            Ok(requests)
+        }
+        Err(e) => Err(miette!("{e}")),
+    }
+}
+
+pub async fn get_all_favorites_from_db(
+    state: ConnectionState,
+    Path(path): Path<PathParams>,
+) -> Result<Vec<Request>> {
+    let mut favorite_requests = Vec::new();
+    let email = path.email.unwrap_or("anon".to_string());
+    let db = state
+        .lock()
+        .map_err(|e| miette!("Global db can't block current thread {e}"))?;
+
+    let favorite_rows = match db.prepare(r#"SELECT favorites FROM "user" WHERE email = ?1"#) {
+        Ok(rows) => rows,
+        Err(e) => {
+            return Err(miette!("{e}"));
+        }
+    };
+
+    let favorite_ids = map_single_value(favorite_rows, &[email.clone()], "favorite")?;
+    for favorite in favorite_ids {
+        let rows = match db.prepare(
+            r#"
+                SELECT * FROM request WHERE user_email = ?1 AND id = ?2 AND hidden = false 
+                ORDER BY id DESC
+            "#,
+        ) {
+            Ok(rows) => rows,
+            Err(e) => {
+                return Err(miette!("{e}"));
+            }
+        };
+
+        let res = map_requests(rows, &[email.clone(), favorite])?;
+        favorite_requests.push(res[0].clone());
+    }
+
+    Ok(favorite_requests)
 }
 
 pub fn map_requests(mut statement: Statement<'_>, args: &[String]) -> Result<Vec<Request>> {
@@ -135,9 +189,10 @@ pub fn serialize_favorites_for_db(favorites: &Option<Vec<i32>>) -> String {
 }
 
 pub fn humanize_date(date: Option<String>) -> Result<String> {
-    let date_ms: u64 = date
-        .unwrap_or(SystemTime::now())
+    let date: u64 = date
+        .unwrap_or(0.to_string())
         .parse()
         .map_err(|e| miette!("Could not parse date: {e}"))?;
-    Ok(format_duration(Duration::from_millis(date_ms)).to_string())
+
+    Ok(format_duration(Duration::from_millis(date)).to_string())
 }
