@@ -1,2 +1,3 @@
 [alias]
 gURL = "run"
+dev = "watch -x run"

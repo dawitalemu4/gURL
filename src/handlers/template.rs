@@ -1,14 +1,15 @@
 use askama::Template;
 use axum::{
-    extract::{Path, Request, State},
+    extract::{Path, Request},
     http::StatusCode,
     response::{Html, IntoResponse, Response},
 };
 use miette::{Result, miette};
 
 use crate::{
-    handlers::{ConnectionState, PathParams, get_all_requests},
-    parse_jwt,
+    get_all_favorites_from_db, get_all_requests_from_db,
+    handlers::{ConnectionState, PathParams},
+    humanize_date, parse_jwt,
 };
 
 #[derive(Template, Debug)]
@@ -21,11 +22,11 @@ pub struct IndexTemplate {
 pub async fn render_page(request: Request) -> Response {
     let res: Result<Response> = (|| {
         let screen = match request.uri().to_string().as_str() {
-            "/" => "index".to_string(),
-            screen => screen.to_string(),
+            "/" => "home".to_string(),
+            screen => screen.strip_prefix("/").unwrap_or(screen).to_string(),
         };
         let index_active = match screen.as_str() {
-            "index" => "navbar-active".to_string(),
+            "home" => "navbar-active".to_string(),
             _ => "".to_string(),
         };
 
@@ -50,7 +51,7 @@ pub async fn render_page(request: Request) -> Response {
 pub async fn render_navbar(Path(path): Path<PathParams>) -> Response {
     let res: Result<Response> = (|| {
         let token = path.token.unwrap_or("null".to_string());
-        let page = path.page.unwrap_or("index".to_string());
+        let page = path.page.unwrap_or("home".to_string());
 
         let mut pages = std::collections::HashMap::new();
         pages.insert("login", "");
@@ -169,6 +170,7 @@ pub async fn render_profile_info(Path(path): Path<PathParams>) -> Response {
             Ok((StatusCode::OK, Html("<p>$  invalid token</p>")).into_response())
         } else {
             let user = parse_jwt(&token)?;
+            let user_since = humanize_date(user.date)?;
 
             Ok((
                 StatusCode::OK,
@@ -188,30 +190,35 @@ pub async fn render_profile_info(Path(path): Path<PathParams>) -> Response {
 }
 
 pub async fn render_profile_update(Path(path): Path<PathParams>) -> Response {
-    let token_string = path.token.unwrap_or("null".to_string());
+    let res: Result<Response> = (|| {
+        let token = path.token.unwrap_or("null".to_string());
 
-    match parse_jwt(&token_string) {
-        Err(e) if e.to_string() == blank_token_error().to_string() => {
-            Html("<p>$  invalid input</p>".to_string()).into_response()
+        if token == "null".to_string() {
+            Ok((StatusCode::OK, Html("<p>$  invalid input</p>")).into_response())
+        } else {
+            let user = parse_jwt(&token)?;
+
+            Ok((
+                StatusCode::OK,
+                Html(format!(
+                    "<p>$  account updated! username: {}, email: {}, password: {}</p>",
+                    user.username, user.email, user.password
+                )),
+            )
+                .into_response())
         }
-        Err(e) => (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            format!("$  Server Error: {}", e),
-        )
-            .into_response(),
-        Ok(Some(user)) => Html(format!(
-            "<p>$  account updated! username: {}, email: {}, password: {}</p>",
-            user.username, user.email, user.password
-        ))
-        .into_response(),
-        Ok(None) => Html("<p>$  invalid input</p>".to_string()).into_response(),
+    })();
+
+    match res {
+        Ok(res) => res,
+        Err(e) => panic!("Server Error: {e}"),
     }
 }
 
 pub async fn render_profile_delete(Path(path): Path<PathParams>) -> Response {
-    let deleted = path.deleted.unwrap_or("false".to_string());
+    let deleted = path.deleted.unwrap_or(false);
 
-    if deleted != "true" {
+    if deleted {
         Html("<p>$  invalid token, try to log back in</p>".to_string()).into_response()
     } else {
         Html("<p>$  deleting account</p>".to_string()).into_response()
@@ -219,25 +226,37 @@ pub async fn render_profile_delete(Path(path): Path<PathParams>) -> Response {
 }
 
 pub async fn render_home_shortcuts(Path(path): Path<PathParams>) -> Response {
-    let token_string = path.token.unwrap_or("null".to_string());
+    let res: Result<Response> = (|| {
+        let token = path.token.unwrap_or("null".to_string());
 
-    match parse_jwt(&token_string) {
-        Ok(None) | Err(_) => Html(
-            r#"
-                <div><kbd>ctrl</kbd> + <kbd>alt</kbd> + <kbd>l</kbd> - login page</div>
-                <div><kbd>ctrl</kbd> + <kbd>alt</kbd> + <kbd>s</kbd> - signup page</div>
-            "#
-            .to_string(),
-        )
-        .into_response(),
-        Ok(Some(_)) => Html(
-            r#"
-                <div><kbd>ctrl</kbd> + <kbd>alt</kbd> + <kbd>p</kbd> - profile page</div>
-                <div><kbd>ctrl</kbd> + <kbd>alt</kbd> + <kbd>l</kbd> - logout</div>
-            "#
-            .to_string(),
-        )
-        .into_response(),
+        if token == "null".to_string() {
+            Ok((
+                StatusCode::OK,
+                Html(
+                    r#"
+                    <div><kbd>ctrl</kbd> + <kbd>alt</kbd> + <kbd>l</kbd> - login page</div>
+                    <div><kbd>ctrl</kbd> + <kbd>alt</kbd> + <kbd>s</kbd> - signup page</div>
+                "#,
+                ),
+            )
+                .into_response())
+        } else {
+            Ok((
+                StatusCode::OK,
+                Html(
+                    r#"
+                    <div><kbd>ctrl</kbd> + <kbd>alt</kbd> + <kbd>p</kbd> - profile page</div>
+                    <div><kbd>ctrl</kbd> + <kbd>alt</kbd> + <kbd>l</kbd> - logout</div>
+                "#,
+                ),
+            )
+                .into_response())
+        }
+    })();
+
+    match res {
+        Ok(res) => res,
+        Err(e) => panic!("Server Error: {e}"),
     }
 }
 
@@ -254,7 +273,7 @@ pub async fn render_new_request(Path(path): Path<PathParams>) -> Response {
             hx-on::before-request="loading()"
             hx-on::after-request="formatResponse()"
         >
-            $  curl -X <select name="method" autofocus required>
+            $  grpcurl -X <select name="method" autofocus required>
                 <option value="GET">GET</option>
                 <option value="POST">POST</option>
                 <option value="PUT">PUT</option>
@@ -276,12 +295,19 @@ pub async fn render_new_request(Path(path): Path<PathParams>) -> Response {
 }
 
 pub async fn render_history_list(
-    State(state): State<ConnectionState>,
+    state: ConnectionState,
     Path(path): Path<PathParams>,
 ) -> Response {
-    let res: Result<Response> = (|| {
-        let email = path.email.unwrap_or("anon".to_string());
-        let requests = get_all_requests(state, path);
+    let res: Result<Response> = (async || {
+        let requests = get_all_requests_from_db(state, Path(path)).await?;
+
+        if requests.is_empty() {
+            return Ok((
+                StatusCode::OK,
+                Html(r#"<br /><p style="margin-left:15px;">$  no history</p"#),
+            )
+                .into_response());
+        }
 
         let status_colors = std::collections::HashMap::from([
             ("1", "green"),
@@ -294,8 +320,7 @@ pub async fn render_history_list(
         let mut html_history_list = String::new();
 
         for (i, request) in requests.iter().enumerate() {
-            let date_ms: u64 = request.date.parse().unwrap_or(0);
-            let formatted_date = format_duration(Duration::from_millis(date_ms));
+            let date = humanize_date(Some(request.date.clone()))?;
 
             let status_color = status_colors
                 .get(
@@ -336,74 +361,36 @@ pub async fn render_history_list(
                 request.status,
                 request.method,
                 request.url,
-                formatted_date,
+                date,
                 request.url,
                 request.metadata.as_ref().unwrap_or(&String::new()),
-                request.metadata.as_ref().unwrap_or(&String::new()), // Assuming origin is in metadata
+                request.metadata.as_ref().unwrap_or(&String::new()),
                 request.payload.as_ref().unwrap_or(&String::new())
             ));
         }
 
         Ok(Html(html_history_list).into_response())
-    })();
+    })()
+    .await;
 
     match res {
         Ok(res) => res,
-        Err(e) => (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            format!("Server error: {e}"),
-        )
-            .into_response(),
+        Err(e) => panic!("Server Error: {e}"),
     }
 }
 
-pub async fn render_favorites_list(Path(path): Path<PathParams>) -> Response {
-    let res: Result<Response> = (|| {
-        let email = path.email.unwrap_or("anon".to_string());
-        let db = state
-            .lock()
-            .map_err(|e| miette!("Global db can't block current thread {e}"))?;
-
-        // Get favorites from user table
-        let favorite_rows = match db.prepare(r#"SELECT favorites FROM "user" WHERE email = ?1"#) {
-            Ok(rows) => rows,
-            Err(e) => {
-                return Ok((
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    format!("Server Error: {e}"),
-                )
-                    .into_response());
-            }
-        };
-
-        let favorites = map_single_value(favorite_rows, &[email.clone()], "favorite")?;
+pub async fn render_favorites_list(
+    state: ConnectionState,
+    Path(path): Path<PathParams>,
+) -> Response {
+    let res: Result<Response> = (async || {
+        let favorites = get_all_favorites_from_db(state, Path(path)).await?;
 
         if favorites.is_empty() {
             return Ok(Html(
                 r#"<br /><p style="margin-left:15px;">$  no favorites</p>"#.to_string(),
             )
             .into_response());
-        }
-
-        let mut favorite_requests = Vec::new();
-
-        for favorite in favorites {
-            let rows = match db.prepare(
-                r#"SELECT * FROM request WHERE user_email = ?1 AND id = ?2 AND hidden = false ORDER BY id DESC"#,
-            ) {
-                Ok(rows) => rows,
-                Err(e) => {
-                    return Ok((
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        format!("Server Error: {e}"),
-                    ).into_response());
-                }
-            };
-
-            let requests = map_requests(rows, &[email.clone(), favorite])?;
-            if !requests.is_empty() {
-                favorite_requests.push(requests[0].clone());
-            }
         }
 
         let status_colors = std::collections::HashMap::from([
@@ -416,9 +403,8 @@ pub async fn render_favorites_list(Path(path): Path<PathParams>) -> Response {
 
         let mut html_favorites_list = String::new();
 
-        for (i, request) in favorite_requests.iter().enumerate() {
-            let date_ms: u64 = request.date.parse().unwrap_or(0);
-            let formatted_date = format_duration(Duration::from_millis(date_ms));
+        for (i, request) in favorites.iter().enumerate() {
+            let date = humanize_date(Some(request.date.clone()))?;
 
             let status_color = status_colors
                 .get(
@@ -458,7 +444,7 @@ pub async fn render_favorites_list(Path(path): Path<PathParams>) -> Response {
                 request.status,
                 request.method,
                 request.url,
-                formatted_date,
+                date,
                 request.url,
                 request.metadata.as_ref().unwrap_or(&String::new()),
                 request.metadata.as_ref().unwrap_or(&String::new()),
@@ -467,14 +453,11 @@ pub async fn render_favorites_list(Path(path): Path<PathParams>) -> Response {
         }
 
         Ok(Html(html_favorites_list).into_response())
-    })();
+    })()
+    .await;
 
     match res {
         Ok(res) => res,
-        Err(e) => (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            format!("Server error: {e}"),
-        )
-            .into_response(),
+        Err(e) => panic!("Server Error: {e}"),
     }
 }

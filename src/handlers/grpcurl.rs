@@ -53,7 +53,7 @@ fn build_grpcurl_command(request: &Request) -> Command {
 }
 
 pub async fn execute_grpcurl_request(
-    State(state): State<ConnectionState>,
+    State(state): ConnectionState,
     Path(path): Path<PathParams>,
     Json(body): Json<RequestBody>,
 ) -> Response {
@@ -87,7 +87,7 @@ pub async fn execute_grpcurl_request(
         final_request.status = status.to_string();
 
         create_request(
-            state,
+            State(state),
             Path(path),
             Json(RequestBody {
                 request: Some(final_request),

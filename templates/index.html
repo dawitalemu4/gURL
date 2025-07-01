@@ -6,10 +6,10 @@
     <script src="https://unpkg.com/htmx.org@1.9.11" integrity="sha384-0gxUXCCR8yv9FM2b+U3FDbsKthCI66oH5IA9fHppQq9DDMHuMauqq1ZHBpJxQ0J0" crossorigin="anonymous"></script>
     <script src="https://unpkg.com/htmx.org/dist/ext/json-enc.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/js-beautify/1.15.1/beautify-html.min.js"></script>
-    <link rel="stylesheet" href="/css/globals.css">
-    <link rel="stylesheet" href="/css/{{ screen }}.css">
-    <script src="/js/{{ screen }}.js" defer></script>
-    <script src="/js/shortcuts.js" defer></script>
+    <link rel="stylesheet" href="/public/css/globals.css">
+    <link rel="stylesheet" href="/public/css/{{ screen }}.css">
+    <script src="/public/js/{{ screen }}.js" defer></script>
+    <script src="/public/js/shortcuts.js" defer></script>
     <link rel="icon" href="/public/favicon.ico">
     <title>gURL</title>
 {% endblock head %}
@@ -24,33 +24,107 @@
 
     <div id="terminal">
         <div id="terminal-header">
+            <p>>_</p>
             <p>gURL:~</p>
             <img src="/public/terminal-buttons.webp" alt="Terminal Buttons Image">
         </div>
         <div id="terminal-console">
-            {% if screen == "index" %}
+            {% if screen == "home" %}
                 <div id="history-modal"></div>
                 <div id="favorites-modal"></div>
             {% elif screen == "login" %}
-                {% block login_form %}{% endblock login_form %}
+                <div id="login-container">
+                    <form id="login-form">
+                        <br />
+                        <div>
+                            <label for="email">$  email: </label>
+                            <input id="login-email" type="text" name="email" placeholder="_" autofocus required />
+                        </div>
+                        <br />
+                        <div>
+                            <label for="password">$  password: </label>
+                            <input id="login-password" type="text" name="password" placeholder="_" required />
+                        </div>
+                        <input type="submit" hidden />
+                        <div id="login-response"></div>
+                        <div id="login-timer"></div>
+                    </form>
+                </div>
             {% elif screen == "signup" %}
-                {% block signup_form %}{% endblock signup_form %}
+                <div id="signup-container">
+                    <form id="signup-form">
+                        <br />
+                        <div>
+                            <label for="username">$  username: </label>
+                            <input id="signup-username" type="text" name="username" placeholder="_" autofocus required />
+                        </div>
+                        <br />
+                        <div>
+                            <label for="email">$  email: </label>
+                            <input id="signup-email" type="text" name="email" placeholder="_" required />
+                        </div>
+                        <br />
+                        <div>
+                            <label for="password">$  password: </label>
+                            <input id="signup-password" type="text" name="password" placeholder="_" required />
+                        </div>
+                        <input type="submit" hidden />
+                        <div id="signup-response"></div>
+                        <div id="signup-timer"></div>
+                    </form>
+                </div>
             {% elif screen == "profile" %}
-                {% block profile_form %}{% endblock profile_form %}
+                <div id="profile-container">
+                    <p>$  Profile Info</p>
+                    <div id="profile-info"></div>
+                    <br />
+                    <p>$  Update Profile Info</p>
+                    <form id="profile-form">
+                        <br />
+                        <div>
+                            <label for="username">$  username: </label>
+                            <input id="profile-username" type="text" name="username" placeholder="_" autofocus required />
+                        </div>
+                        <br />
+                        <div>
+                            <label for="password">$  password: </label>
+                            <input id="profile-password" type="text" name="password" placeholder="_" required />
+                        </div>
+                        <input type="submit" hidden />
+                        <br />
+                        <p onclick="deleteProfile()">$  Delete Profile</p>
+                        <div id="profile-response"></div>
+                        <div id="profile-timer"></div>
+                    </form>
+                </div>
             {% endif %}
         </div>
     </div>
 
     <div id="shortcuts">
         <div id="shortcuts-modal">
-            {% if screen == "index" %}
-                {% block index_shortcuts %}{% endblock index_shortcuts %}
+            {% if screen == "home" %}
+                <div><kbd>enter</kbd> - send/select request</div>
+                <div><kbd>tab</kbd> - next text box</div>
+                <div><kbd>shift</kbd> + <kbd>tab</kbd> - previous text box</div>
+                <div><kbd>↑</kbd> or <kbd>↓</kbd> - select autofill options</div>
+                <div><kbd>ctrl</kbd> + <kbd>alt</kbd> + <kbd>j</kbd> - <span onclick="emptyForm()">empty request</span></div>
+                <div><kbd>ctrl</kbd> + <kbd>alt</kbd> + <kbd>h</kbd> - <span onclick="toggleHistoryList()">toggle history list</span></div>
+                <div><kbd>ctrl</kbd> + <kbd>alt</kbd> + <kbd>d</kbd> - <span onclick="hideRequest()">remove request from history</span></div>
+                <div><kbd>ctrl</kbd> + <kbd>alt</kbd> + <kbd>v</kbd> - <span onclick="toggleFavoritesList()">toggle favorites list</span></div>
+                <div><kbd>ctrl</kbd> + <kbd>alt</kbd> + <kbd>f</kbd> - <span onclick="toggleFavoriteItem()">favorite/unfavorite</span></div>
             {% elif screen == "login" %}
-                {% block login_shortcuts %}{% endblock login_shortcuts %}
+                <div><kbd>enter</kbd> - login</div>
+                <div><kbd>tab</kbd> - next text box</div>
+                <div><kbd>shift</kbd> + <kbd>tab</kbd> - previous text box</div>
             {% elif screen == "signup" %}
-                {% block signup_shortcuts %}{% endblock signup_shortcuts %}
+                <div><kbd>enter</kbd> - signup</div>
+                <div><kbd>tab</kbd> - next text box</div>
+                <div><kbd>shift</kbd> + <kbd>tab</kbd> - previous text box</div>
             {% elif screen == "profile" %}
-                {% block profile_shortcuts %}{% endblock profile_shortcuts %}
+                <div><kbd>enter</kbd> - update profile</div>
+                <div><kbd>tab</kbd> - next text box</div>
+                <div><kbd>shift</kbd> + <kbd>tab</kbd> - previous text box</div>
             {% endif %}           
         </div>
         <div id="shortcuts-toggle-modal">
@@ -60,6 +134,6 @@
 
     <div id="demo-cover">
         <p>don't use your phone to test your api🤦</p>
-        <p>go to <a href="https://gokey.github.io">gokey.github.io</a> for demos, docs, and download guides</p>
+        <p>go to <a href="https://keycurl.github.io">keycurl.github.io</a> for demos, docs, and download guides for the http version of this project</p>
     </div>
 {% endblock body %}

@@ -5,24 +5,19 @@ use axum::{
 };
 use miette::{Result, miette};
 
-use crate::handlers::{ConnectionState, PathParams, RequestBody, map_requests, map_single_value};
+use crate::handlers::{
+    ConnectionState, PathParams, RequestBody, get_all_requests_from_db, get_all_favorites_from_db, map_requests,
+};
 
 pub async fn get_all_requests(
-    State(state): ConnectionState,
+    state: ConnectionState,
     Path(path): Path<PathParams>,
 ) -> Response {
-    let res: Result<Response> = (|| {
-        let email = path.email.unwrap_or("anon".to_string());
-        let db = state
-            .lock()
-            .map_err(|e| miette!("Global db can't block current thread {e}"))?;
+    let res: Result<Response> = (async || {
+        let requests = get_all_requests_from_db(state, Path(path)).await;
 
-        match db.prepare(
-            "SELECT * FROM request WHERE user_email = ?1 AND hidden = false ORDER BY id DESC",
-        ) {
-            Ok(rows) => {
-                let requests = map_requests(rows, &[email])?;
-
+        match requests {
+            Ok(requests) => {
                 if requests.is_empty() {
                     Ok((
                         StatusCode::NOT_FOUND,
@@ -39,7 +34,8 @@ pub async fn get_all_requests(
             )
                 .into_response()),
         }
-    })();
+    })()
+    .await;
 
     match res {
         Ok(res) => res,
@@ -48,59 +44,31 @@ pub async fn get_all_requests(
 }
 
 pub async fn get_all_favorite_requests(
-    State(state): ConnectionState,
+    state: ConnectionState,
     Path(path): Path<PathParams>,
 ) -> Response {
-    let res: Result<Response> = (|| {
-        let mut favorite_requests = Vec::new();
-        let email = path.email.unwrap_or("anon".to_string());
-        let db = state
-            .lock()
-            .map_err(|e| miette!("Global db can't block current thread {e}"))?;
+    let res: Result<Response> = (async || {
+        let favorites = get_all_favorites_from_db(state, Path(path)).await;
 
-        let favorite_rows = match db.prepare(r#"SELECT favorites FROM "user" WHERE email = ?1"#) {
-            Ok(rows) => rows,
-            Err(e) => {
-                return Ok((
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    format!("Server Error: {e}"),
-                )
-                    .into_response());
-            }
-        };
-
-        let favorites = map_single_value(favorite_rows, &[email.clone()], "favorite")?;
-        for favorite in favorites {
-            let rows = match db.prepare(
-                r#"
-                SELECT * FROM request WHERE user_email = ?1 AND id = ?2 AND hidden = false 
-                ORDER BY id DESC
-            "#,
-            ) {
-                Ok(rows) => rows,
-                Err(e) => {
-                    return Ok((
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        format!("Server Error: {e}"),
+        match favorites {
+            Ok(favorites) => {
+                if favorites.is_empty() {
+                    Ok((
+                            StatusCode::NOT_FOUND,
+                            "No favorite requests found from this user email",
                     )
-                        .into_response());
+                        .into_response())
+                } else {
+                    Ok((StatusCode::OK, Json(favorites)).into_response())
                 }
-            };
-
-            let res = map_requests(rows, &[email.clone(), favorite])?;
-            favorite_requests.push(res[0].clone());
-        }
-
-        if favorite_requests.is_empty() {
-            Ok((
-                StatusCode::NOT_FOUND,
-                "No favorite requests found from this user email",
+            }
+            Err(e) => Ok((
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("Server error: {e}"),
             )
-                .into_response())
-        } else {
-            Ok((StatusCode::OK, Json(favorite_requests)).into_response())
+                .into_response()),
         }
-    })();
+    })().await;
 
     match res {
         Ok(res) => res,
