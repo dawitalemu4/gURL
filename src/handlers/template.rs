@@ -266,7 +266,7 @@ pub async fn render_new_request(Path(path): Path<PathParams>) -> Response {
     let html = format!(
         r##"
         <form id="new-request"
-            hx-post="/curl/request"
+            hx-post="/grpcurl/request"
             hx-target="#request-response"
             hx-swap="innerHTML"
             hx-ext="json-enc"
