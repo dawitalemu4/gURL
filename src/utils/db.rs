@@ -23,11 +23,11 @@ pub fn db(init: bool, test: bool) -> Result<Connection> {
         };
 
         println!("sqlite database file located at {db_path}");
-        let db_empty = connection
-            .table_exists(Some("gURL"), "request")
+        let db_initialized = connection
+            .table_exists(None, "request")
             .map_err(|e| miette!("Could not query request table{e}"))?;
 
-        if db_empty {
+        if !db_initialized {
             let init_script = fs::read_to_string("init.sql")
                 .map_err(|e| miette!("init.sql could not be read: {e}"))?;
 
