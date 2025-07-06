@@ -1,9 +1,9 @@
 <h1 align="center">
-    <img src="https://github.com/dawitalemu4/postwoman/assets/106638403/7555cd2c-3cf0-42fa-9420-90c35502a897" alt="gURL icon" style="width: 50px; height: 50px;">
+    <img src="https://github.com/user-attachments/assets/6c08e081-0ff1-43db-8abc-77b37cb6707c" alt="gURL icon" style="width: 50px; height: 50px;">
     <p>gURL</p>
 </h1>
 
-gURL is a self-hosted dev tool that achieves what postman does but with my personal preferences in its functionality and design. Made with Go (Echo), HTMX, and cURL.
+gURL is a self-hosted dev tool that achieves what postman does but with my personal preferences in its functionality and design. Made with Rust (Axum), HTMX, and grpcurl.
 
 
 ## Differences from Postman
@@ -24,8 +24,6 @@ gURL is a self-hosted dev tool that achieves what postman does but with my perso
 </video>
 
 <p style="visibility:hidden">https://github.com/dawitalemu4/postwoman/assets/106638403/b09125dd-565e-479f-be58-194261c2667f</p>
-
-> JSON and HTML responses are automatically formatted.
 
 
 ### History List
@@ -55,7 +53,7 @@ gURL is a self-hosted dev tool that achieves what postman does but with my perso
 <p style="visibility:hidden">https://github.com/dawitalemu4/postwoman/assets/106638403/2b725e99-f3b3-4b6c-ba3c-33f6369b3e1d</p>
 
 
-Go to [gokey.github.io/features](https://gokey.github.io/features) to view all features.
+Go to [gURL.github.io/features](https://gURL.github.io/features) to view all features.
 
 
 ## Installation
@@ -64,63 +62,47 @@ Go to [gokey.github.io/features](https://gokey.github.io/features) to view all f
 
 See the README in the [.docker-setup](https://github.com/dawitalemu4/gURL/tree/main/.docker-setup) folder for the docker setup guide.
 
-> WARNING: If using gURL from docker and you want to test localhost urls, replace localhost with host.docker.internal in the url.
-
 ### Local Setup
 
-To locally run gURL, you need to have Go, PostgreSQL, Bash, and cURL installed on your machine.
+To locally run gURL, you need to have Rust, Bash, and grpcurl installed on your machine.
 
 1. Download the ZIP of this repo or clone the repository
 ```bash
 git clone https://github.com/dawitalemu4/gURL.git
 ```
 
-2. Install the dependencies
-```bash
-go mod tidy
-```
+2. Rename the `.env.example` file to `.env` and use your own values (or you can just use the provided values)
 
-3. Rename the `.env.example` file to `.env` and use your own values (or you can just use the provided values)
-
-4. Start the PostgreSQL server
+5. Run the server (I prefer [cargo-watch](https://crates.io/crates/cargo-watch) for hot reload)
 ```bash
-pg_ctl -D "C:\Program Files\PostgreSQL\16\data" start # default postgres path on windows
+cargo run
 ```
 or
 ```bash
-pg_ctl -D /usr/local/var/postgres start # default postgres path on mac
-```
-
-5. Run the server (I prefer air for hot reload)
-```bash
-go run server.go
-```
-or
-```bash
-air
+cargo watch -x run
 ```
 
 6. Open your browser and navigate to `localhost:YOURPORT`
 
-Download links: [Go](https://go.dev/doc/install), [PostgreSQL](https://www.postgresql.org/download/), [Bash](https://git-scm.com/downloads), [cURL](https://curl.se/download.html).
+Download links: [Rust](https://www.rust-lang.org/tools/install), [Bash](https://git-scm.com/downloads), [grpcurl](https://github.com/fullstorydev/grpcurl).
 
-View [gokey.github.io/install](https://gokey.github.io/install) for more detailed instructions for your OS.
+View [gURL.github.io/install](https://gURL.github.io/install) for more detailed instructions for your OS.
 
 
 ## Startup Shortcuts
 
 Check out my [startup script](https://github.com/dawitalemu4/gURL/blob/main/startup.sh) to easily start up gURL locally from a shortcut on your taskbar, or this [startup script](https://github.com/dawitalemu4/gURL/tree/main/.docker-setup/startup.sh) if you are using docker.
 
-Visit [gokey.github.io/shortcuts](https://gokey.github.io/shortcuts) for demo videos and tutorials on how to make your own shortcut.
+Visit [gURL.github.io/shortcuts](https://gURL.github.io/shortcuts) for demo videos and tutorials on how to make your own shortcut.
 
 
 ## Contributing
 
-I'm open to contributions and suggestions, but fork this project if there are any crazy big changes you want to make that go against the [gokey.github.io/contributing](https://gokey.github.io/contributing).
+I'm open to contributions and suggestions, but fork this project if there are any crazy big changes you want to make that go against the [gURL.github.io/contributing](https://gURL.github.io/contributing).
 
-Run `go test -v ./tests` to run the tests against your changes before creating a pr.
+Run `cargo test` to run the tests against your changes before creating a pr.
 
-Follow the checklist in the [gokey.github.io/contributing](https://gokey.github.io/contributing) if you create a pull request or an issue.
+Follow the checklist in the [gURL.github.io/contributing](https://gURL.github.io/contributing) if you create a pull request or an issue.
 
 
 ## FAQ

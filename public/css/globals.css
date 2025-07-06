@@ -64,26 +64,41 @@ html, body {
     width: 80%;
     height: 75%;
     flex-direction: column;
-    border: 2px solid #2f2f2f;
+    border: 2px solid #35363a;
 }
 
 #terminal-header {
     display: flex;
     position: relative;
-    width: 100%;
+    width: calc(100% - 40px);
     height: 40px;
-    justify-content: center;
+    justify-content: flex-start;
     align-items: center;
     font-family: Ubuntu;
-    background-color: #2f2f2f;
+    background-color: #35363a;
     border-bottom: 1px solid black;
     user-select: none;
+}
+
+#terminal-header:first-child {
+    padding: 0 20px;
+}
+
+#terminal-tab {
+    display: flex;
+    width: 120px;
+    height: 100%;
+    margin-left: 25px;
+    justify-content: center;
+    align-items: center;
+    background-color: #2f2f2f;
+    border-radius: 15px 15px 0 0;
 }
 
 #terminal-header img {
     position: absolute;
     top: 2.5px;
-    right: 0;
+    right: 5px;
     height: 35px;
     border: none;
 }
