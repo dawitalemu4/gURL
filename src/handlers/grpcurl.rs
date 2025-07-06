@@ -14,40 +14,36 @@ use crate::models::request::Request;
 fn build_grpcurl_command(request: &Request) -> Command {
     let mut command = Command::new("grpcurl");
 
-    command.arg("-v".to_string());
+    command.arg("-vv");
 
     if request.url.starts_with("localhost") || request.url.starts_with("127.0.0.1") {
-        command.arg("-plaintext".to_string());
+        command.arg("-plaintext");
     }
 
     if let Some(metadata) = &request.metadata {
         for header in metadata.split(&['\n', ';'][..]) {
             let header = header.trim();
             if !header.is_empty() {
-                command.arg("-H".to_string());
-                command.arg(header.to_string());
+                command.arg("-H");
+                command.arg(header);
             }
         }
     }
 
     if let Some(body) = &request.payload {
-        command.arg("-d".to_string());
-        command.arg(body.to_string());
+        command.arg("-d");
+        command.arg(body);
     }
 
     if let Some(proto_file) = &request.proto_file {
-        command.arg("-proto".to_string());
-        command.arg(proto_file.to_string());
+        command.arg("-proto");
+        command.arg(proto_file);
     }
 
-    command.arg(request.url.clone());
+    command.arg("-");
+    command.arg(&request.method);
 
-    let service_method = if let Some(service) = &request.service {
-        format!("{}/{}", service, request.method)
-    } else {
-        request.method.to_string()
-    };
-    command.arg(service_method);
+    command.arg(request.url.clone());
 
     command
 }

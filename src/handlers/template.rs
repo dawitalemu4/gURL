@@ -279,10 +279,10 @@ pub async fn render_new_request(Path(path): Path<PathParams>) -> Response {
                 <option value="PUT">PUT</option>
                 <option value="PATCH">PATCH</option>
                 <option value="DELETE">DELETE</option>
-            </select> \\ <br />
-            -H '<input name="headers" type="text" placeholder="headers" />' \\ <br />
-            -H '<input name="origin" type="text" placeholder="origin" />' \\ <br />
-            -d '<textarea name="body" type="text" placeholder="body"></textarea>' \\ <br />
+            </select> \ <br />
+            -H '<input name="headers" type="text" placeholder="headers" />' \ <br />
+            -H '<input name="origin" type="text" placeholder="origin" />' \ <br />
+            -d '<textarea name="body" type="text" placeholder="body"></textarea>' \ <br />
             <input name="url" type="text" placeholder="url" required />
             <input name="user_email" value="{email}" hidden />
             <input type="submit" hidden />
