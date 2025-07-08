@@ -7,9 +7,8 @@ use axum::{
 use miette::{Result, miette};
 
 use crate::{
-    get_all_favorites_from_db, get_all_requests_from_db,
-    handlers::{ConnectionState, PathParams},
-    humanize_date, parse_jwt,
+    ConnectionState, PathParams, get_all_favorites_from_db, get_all_requests_from_db,
+    get_status_color, humanize_date, parse_jwt,
 };
 
 #[derive(Template, Debug)]
@@ -119,7 +118,11 @@ pub async fn render_login(Path(path): Path<PathParams>) -> Response {
         let token = path.token.unwrap_or("null".to_string());
 
         if token == "null".to_string() {
-            Ok((StatusCode::OK, Html("<p>$  incorrect credentials</p>")).into_response())
+            Ok((
+                StatusCode::OK,
+                Html("<p>$  incorrect credentials or user doesn't exist</p>"),
+            )
+                .into_response())
         } else {
             let user = parse_jwt(&token)?;
             Ok((
@@ -273,33 +276,21 @@ pub async fn render_new_request(Path(path): Path<PathParams>) -> Response {
             hx-on::before-request="loading()"
             hx-on::after-request="formatResponse()"
         >
-            $  grpcurl -X <select name="method" autofocus required>
-                <option value="GET">GET</option>
-                <option value="POST">POST</option>
-                <option value="PUT">PUT</option>
-                <option value="PATCH">PATCH</option>
-                <option value="DELETE">DELETE</option>
-            </select> \ <br />
-            -H '<input name="headers" type="text" placeholder="headers" />' \ <br />
-            -H '<input name="origin" type="text" placeholder="origin" />' \ <br />
-            -d '<textarea name="body" type="text" placeholder="body"></textarea>' \ <br />
-            <input name="url" type="text" placeholder="url" required />
+            $  grpcurl <textarea name="command" type="text" placeholder="command" autofocus></textarea>
             <input name="user_email" value="{email}" hidden />
-            <input type="submit" hidden />
+            <input type="submit" value="execute" />
         </form>
-        <div id="request-response "></div>
+        <div id="request-response"></div>
         "##
     );
 
     Html(html).into_response()
 }
 
-pub async fn render_history_list(
-    state: ConnectionState,
-    Path(path): Path<PathParams>,
-) -> Response {
+pub async fn render_history_list(state: ConnectionState, Path(path): Path<PathParams>) -> Response {
     let res: Result<Response> = (async || {
         let requests = get_all_requests_from_db(state, Path(path)).await?;
+        let mut html_history_list = String::new();
 
         if requests.is_empty() {
             return Ok((
@@ -309,30 +300,9 @@ pub async fn render_history_list(
                 .into_response());
         }
 
-        let status_colors = std::collections::HashMap::from([
-            ("1", "green"),
-            ("2", "green"),
-            ("3", "yellow"),
-            ("4", "red"),
-            ("5", "orange"),
-        ]);
-
-        let mut html_history_list = String::new();
-
         for (i, request) in requests.iter().enumerate() {
             let date = humanize_date(Some(request.date.clone()))?;
-
-            let status_color = status_colors
-                .get(
-                    request
-                        .status
-                        .chars()
-                        .next()
-                        .unwrap_or('5')
-                        .to_string()
-                        .as_str(),
-                )
-                .unwrap_or(&"orange");
+            let status_color = get_status_color(&request.status);
 
             html_history_list.push_str(&format!(
                 r#"
@@ -349,23 +319,17 @@ pub async fn render_history_list(
                         <div class="removed-favorite">removed from favorites</div>
                         <div class="not-loggedin">log in to save favorites</div>
                         <div class="deleted-item">deleted item</div>
-                        <input type="hidden" name="url" value="{}" />
-                        <input type="hidden" name="headers" value="{}" />
-                        <input type="hidden" name="origin" value="{}" />
-                        <textarea name="body" hidden>{}</textarea>
+                        <input type="hidden" name="command" value="{}" />
                     </div>
                     "#,
                 i + 1,
                 request.id,
                 status_color,
-                request.status,
-                request.method,
-                request.url,
+                request.status.clone().unwrap_or_default(),
+                request.method.clone().unwrap_or_default(),
+                request.command,
                 date,
-                request.url,
-                request.metadata.as_ref().unwrap_or(&String::new()),
-                request.metadata.as_ref().unwrap_or(&String::new()),
-                request.payload.as_ref().unwrap_or(&String::new())
+                request.command,
             ));
         }
 
@@ -385,6 +349,7 @@ pub async fn render_favorites_list(
 ) -> Response {
     let res: Result<Response> = (async || {
         let favorites = get_all_favorites_from_db(state, Path(path)).await?;
+        let mut html_favorites_list = String::new();
 
         if favorites.is_empty() {
             return Ok(Html(
@@ -393,30 +358,9 @@ pub async fn render_favorites_list(
             .into_response());
         }
 
-        let status_colors = std::collections::HashMap::from([
-            ("1", "green"),
-            ("2", "green"),
-            ("3", "yellow"),
-            ("4", "red"),
-            ("5", "orange"),
-        ]);
-
-        let mut html_favorites_list = String::new();
-
         for (i, request) in favorites.iter().enumerate() {
             let date = humanize_date(Some(request.date.clone()))?;
-
-            let status_color = status_colors
-                .get(
-                    request
-                        .status
-                        .chars()
-                        .next()
-                        .unwrap_or('5')
-                        .to_string()
-                        .as_str(),
-                )
-                .unwrap_or(&"orange");
+            let status_color = get_status_color(&request.status);
 
             html_favorites_list.push_str(&format!(
                 r#"
@@ -432,23 +376,17 @@ pub async fn render_favorites_list(
                         <div class="added-favorite">added to favorites</div>
                         <div class="removed-favorite">removed from favorites</div>
                         <div class="deleted-item">deleted item</div>
-                        <input type="hidden" name="url" value="{}" />
-                        <input type="hidden" name="headers" value="{}" />
-                        <input type="hidden" name="origin" value="{}" />
-                        <textarea name="body" hidden>{}</textarea>
+                        <input type="hidden" name="command" value="{}" />
                     </div>
                     "#,
                 i + 1,
                 request.id,
                 status_color,
-                request.status,
-                request.method,
-                request.url,
+                request.status.clone().unwrap_or_default(),
+                request.method.clone().unwrap_or_default(),
+                request.command,
                 date,
-                request.url,
-                request.metadata.as_ref().unwrap_or(&String::new()),
-                request.metadata.as_ref().unwrap_or(&String::new()),
-                request.payload.as_ref().unwrap_or(&String::new())
+                request.command,
             ));
         }
 

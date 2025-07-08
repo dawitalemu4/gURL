@@ -1,15 +1,14 @@
-# change the next line to 'FROM --platform=linux/amd64 dawitalemu4/gokey:latest AS builder' if you are a mac user and getting any errors related to the image not being compatible with your CPU architecture
-FROM dawitalemu4/gokey:latest AS builder
+FROM dawitalemu4/gURL:latest AS builder
 
 
-# change the next line to 'FROM --platform=linux/amd64 golang:1.22.2' if you are a mac user and getting this error: "rosetta error: failed to open elf at /lib64/ld-linux-x86-64.so.2"
-FROM golang:1.22.2
+FROM rust:1.88
 
-RUN apt-get update && apt-get install -y curl
+RUN apt-get update && apt-get install -y grpcurl
 
-COPY --from=builder /gokey-cURL /gokey-cURL
-COPY --from=builder /go/views /go/views
+COPY --from=builder /gURL /gURL
+COPY --from=builder /public /public
+COPY --from=builder /templates /templates 
 
 COPY .env .
 
-CMD ["/gokey-cURL"]
+CMD ["/gURL"]

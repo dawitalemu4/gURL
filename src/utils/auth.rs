@@ -1,16 +1,17 @@
+use std::time::{SystemTime, UNIX_EPOCH};
+
 use bcrypt::{DEFAULT_COST, hash, verify};
 use jsonwebtoken::{DecodingKey, EncodingKey, Header, Validation, decode, encode};
 use miette::{Result, miette};
 use serde::{Deserialize, Serialize};
-use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::{models::user::User, utils::env::env};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Claims {
-    pub sub: User, // email
-    pub exp: u64,  // expiration time
-    pub iat: u64,  // issued at
+    pub sub: User, // has to be a string, serde this
+    pub exp: u64, // expiration time
+    pub iat: u64, // issued at
 }
 
 pub fn hash_password(password: &str) -> Result<String> {
@@ -44,12 +45,17 @@ pub fn create_jwt(user: User) -> Result<String> {
 
 pub fn parse_jwt(token: &str) -> Result<User> {
     let env = env()?;
+    let mut validation = Validation::default();
+    validation.insecure_disable_signature_validation();
+    validation.validate_exp = false;
+
     let token_data = decode::<Claims>(
         token,
         &DecodingKey::from_secret(env.jwt_signature.as_ref()),
-        &Validation::default(),
-    )
-    .map_err(|e| miette!("Invalid JWT token: {e}"))?;
+        &validation
+    );
 
-    Ok(token_data.claims.sub)
+    eprintln!("{:#?}", token_data);
+
+    Ok(token_data.map_err(|e| miette!("Invalid JWT token: {e}"))?.claims.sub)
 }

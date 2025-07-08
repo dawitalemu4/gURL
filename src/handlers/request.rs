@@ -5,14 +5,14 @@ use axum::{
 };
 use miette::{Result, miette};
 
-use crate::handlers::{
-    ConnectionState, PathParams, RequestBody, get_all_requests_from_db, get_all_favorites_from_db, map_requests,
+use crate::{
+    handlers::{
+        get_all_favorites_from_db, get_all_requests_from_db, map_requests, ConnectionState, PathParams
+    },
+    models::{request::Request, serialize_bool_for_db},
 };
 
-pub async fn get_all_requests(
-    state: ConnectionState,
-    Path(path): Path<PathParams>,
-) -> Response {
+pub async fn get_all_requests(state: ConnectionState, Path(path): Path<PathParams>) -> Response {
     let res: Result<Response> = (async || {
         let requests = get_all_requests_from_db(state, Path(path)).await;
 
@@ -54,8 +54,8 @@ pub async fn get_all_favorite_requests(
             Ok(favorites) => {
                 if favorites.is_empty() {
                     Ok((
-                            StatusCode::NOT_FOUND,
-                            "No favorite requests found from this user email",
+                        StatusCode::NOT_FOUND,
+                        "No favorite requests found from this user email",
                     )
                         .into_response())
                 } else {
@@ -68,7 +68,8 @@ pub async fn get_all_favorite_requests(
             )
                 .into_response()),
         }
-    })().await;
+    })()
+    .await;
 
     match res {
         Ok(res) => res,
@@ -79,11 +80,10 @@ pub async fn get_all_favorite_requests(
 pub async fn create_request(
     State(state): ConnectionState,
     Path(path): Path<PathParams>,
-    Json(body): Json<RequestBody>,
+    Json(request): Json<Request>,
 ) -> Response {
     let res: Result<Response> = (|| {
         let email = path.email.unwrap_or("anon".to_string());
-        let request = body.request.expect("Cannot serialize Request from body");
         let db = state
             .lock()
             .map_err(|e| miette!("Global db can't block current thread {e}"))?;
@@ -95,15 +95,10 @@ pub async fn create_request(
             Ok(rows) => {
                 let request = map_requests(rows, &[
                     email,
-                    request.url,
-                    request.method.to_string(),
-                    request.metadata.unwrap_or_default(),
-                    request.payload.unwrap_or_default(),
-                    request.status,
+                    request.method.unwrap_or_default(),
+                    request.status.unwrap_or_default(),
                     request.date,
-                    request.service.unwrap_or_default(),
-                    request.proto_file.unwrap_or_default(),
-                    request.hidden.to_string()
+                    serialize_bool_for_db(request.hidden).to_string()
                 ])?[0].clone();
 
                 if request.id == 0 {
