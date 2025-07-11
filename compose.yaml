@@ -6,6 +6,5 @@ services:
       dockerfile: Dockerfile
     ports:
       - "${PORT}:${PORT}"
-    depends_on:
-      db:
-        condition: service_healthy
+    volumes:
+      - "${DB_PATH}:${DB_PATH}"

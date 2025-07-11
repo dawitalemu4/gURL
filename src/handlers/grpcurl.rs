@@ -1,4 +1,4 @@
-use std::process::Command;
+use std::{os::windows::process::CommandExt, process::Command};
 
 use axum::{
     extract::{Json, Path, State},
@@ -8,58 +8,18 @@ use axum::{
 use miette::{Result, miette};
 use regex::Regex;
 
-use crate::handlers::{ConnectionState, PathParams, RequestBody, create_request};
-use crate::models::request::Request;
-
-fn build_grpcurl_command(request: &Request) -> Command {
-    let mut command = Command::new("grpcurl");
-
-    command.arg("-vv");
-
-    if request.url.starts_with("localhost") || request.url.starts_with("127.0.0.1") {
-        command.arg("-plaintext");
-    }
-
-    if let Some(metadata) = &request.metadata {
-        for header in metadata.split(&['\n', ';'][..]) {
-            let header = header.trim();
-            if !header.is_empty() {
-                command.arg("-H");
-                command.arg(header);
-            }
-        }
-    }
-
-    if let Some(body) = &request.payload {
-        command.arg("-d");
-        command.arg(body);
-    }
-
-    if let Some(proto_file) = &request.proto_file {
-        command.arg("-proto");
-        command.arg(proto_file);
-    }
-
-    command.arg("-");
-    command.arg(&request.method);
-
-    command.arg(request.url.clone());
-
-    command
-}
+use crate::{
+    handlers::{ConnectionState, PathParams, create_request},
+    models::request::Request,
+};
 
 pub async fn execute_grpcurl_request(
     State(state): ConnectionState,
     Path(path): Path<PathParams>,
-    Json(body): Json<RequestBody>,
+    Json(request): Json<Request>,
 ) -> Response {
     let res: Result<Response> = (async || {
-        let request = body
-            .request
-            .clone()
-            .ok_or_else(|| miette!("Cannot serialize Request from body"))?;
-
-        let output = build_grpcurl_command(&request)
+        let output = Command::new("grpcurl").raw_arg(&request.command)
             .output()
             .map_err(|e| miette!("Failed to execute grpcurl command: {}", e))?;
 
@@ -80,15 +40,12 @@ pub async fn execute_grpcurl_request(
         };
 
         let mut final_request = request;
-        final_request.status = status.to_string();
+        final_request.status = Some(status.to_string());
 
         create_request(
             State(state),
             Path(path),
-            Json(RequestBody {
-                request: Some(final_request),
-                user: None,
-            }),
+            Json(final_request),
         ).await;
 
         if exit_code == 1 && error.contains("connection refused") {

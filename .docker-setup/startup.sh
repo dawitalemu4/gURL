@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# enter your gokey-cURL folder path
-cd D:/dev/gokey-cURL
+# enter your gURL folder path
+cd ~/dev/gL
 
 
 # start up the docker engine 
@@ -31,5 +31,5 @@ docker-compose up
 
 
 # for mac
-# start up gokey-cURL
+# start up gURL
 open http://localhost:1323

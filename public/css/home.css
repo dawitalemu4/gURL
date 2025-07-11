@@ -1,5 +1,6 @@
 #new-request {
     width: 100%;
+    height: 150px;
 }
 
 #new-request > * {
@@ -12,30 +13,25 @@
     border: none;
 }
 
-#new-request select {
-    width: 100px;
-}
-
 #new-request textarea {
-    width: 70%;
+    width: 80%;
     min-width: 270px;
-    max-width: 75%;
-    height: 100px;
+    max-width: 80%;
+    height: 150px;
     resize: none;
-    margin-bottom: -90px;
+    margin-bottom: -135px;
     overflow: auto;
     scrollbar-width: none;
 }
 
-#new-request input:nth-last-of-type(3) {
-    resize: horizontal;
-    min-width: 60%;
-    max-width: 100%;
-    margin-top: 100px;
+#new-request input {
+    width: 10%;
+    margin-top: 150px;
 }
 
 #request-response {
     width: 100%;
+    margin-top: 80px;
 }
 
 #response-textarea {

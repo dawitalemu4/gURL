@@ -69,24 +69,16 @@ const fillForm = () => {
     const selectedItem = document.activeElement;
     const curlForm = document.getElementById("new-request");
 
-    const methodField = curlForm.children.method;
-    const urlField = curlForm.children.url;
-    const headersField = curlForm.children.headers;
-    const originField = curlForm.children.origin;
-    const bodyField = curlForm.children.body;
+    const commandField = curlForm.children.command;
 
     if (selectedItem.className === "history-item" || selectedItem.className === "favorites-item") {
 
-        methodField.value = selectedItem.children[0].children[1].innerHTML;
-        urlField.value = selectedItem.children.url.value;
-        headersField.value = selectedItem.children.headers.value;
-        originField.value = selectedItem.children.origin.value;
-        bodyField.value = selectedItem.children.body.value;
+        commandField.value = selectedItem.children.command.value;
 
         document.getElementById("history-modal").style.display = "none";
         document.getElementById("favorites-modal").style.display = "none";
 
-        methodField.focus();
+        commandField.focus();
     };
 };
 
