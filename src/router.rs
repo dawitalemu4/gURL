@@ -14,7 +14,7 @@ pub fn init_router(global_db: Arc<Mutex<rusqlite::Connection>>) -> Router {
         .route("/api/user/auth", post(get_user))
         .route("/api/user/new", post(create_user))
         .route("/api/user/update", put(update_user))
-        .route("/api/user/update", delete(delete_user))
+        .route("/api/user/delete", delete(delete_user))
         .route("/api/user/favorites", patch(update_favorites))
         // Request routes
         .route("/api/request/all/{email}", get(get_all_requests))
@@ -43,10 +43,7 @@ pub fn init_router(global_db: Arc<Mutex<rusqlite::Connection>>) -> Router {
         .route("/handle/signup/{token}", get(render_signup))
         .route("/handle/profile/info/{token}", get(render_profile_info))
         .route("/handle/profile/update/{token}", get(render_profile_update))
-        .route(
-            "/handle/profile/delete/{deleted}",
-            get(render_profile_delete),
-        )
+        .route("/handle/profile/delete", get(render_profile_delete))
         .nest_service("/public", ServeDir::new("public"))
         // Healtcheck route
         .route("/api/healthcheck", get("gURL is healthy"))

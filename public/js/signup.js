@@ -62,7 +62,6 @@ document.getElementById("signup-form").addEventListener("submit", async (e) => {
             "password": password,
             "date": `${Date.now()}`,
             "favorites": null,
-            "old_pw": "",
             "deleted": false
         })
     });

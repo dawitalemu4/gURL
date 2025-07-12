@@ -26,7 +26,7 @@ pub fn deserialize_favorites_for_db(favorites_str: Option<String>) -> Option<Vec
 pub fn serialize_bool_for_db(value: bool) -> u8 {
     match value {
         true => 1,
-        false => 0
+        false => 0,
     }
 }
 
@@ -34,6 +34,6 @@ pub fn deserialize_bool_for_db(value: u8) -> bool {
     match value {
         1 => true,
         0 => false,
-        _ => false
+        _ => false,
     }
 }

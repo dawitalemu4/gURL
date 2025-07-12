@@ -6,7 +6,7 @@ const parseJwt = (token) => {
         return "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2);
     }).join(""));
 
-    return JSON.parse(jsonPayload);
+    return JSON.parse(JSON.parse(jsonPayload).sub);
 };
 
 window.onload = function() {
@@ -16,13 +16,11 @@ window.onload = function() {
     const tokenString = localStorage.getItem("auth");
     const profile = parseJwt(tokenString);
     const username = document.getElementById("profile-username");
-    const password = document.getElementById("profile-password");
 
     htmx.ajax("GET", `/handle/navbar/profile/${tokenString}`, { target: "#navbar-profile", swap: "innerHTML" });
     htmx.ajax("GET", `/handle/profile/info/${tokenString}`, { target: "#profile-info", swap: "innerHTML" });
 
     username.value = profile.username;
-    password.value = profile.password;
 
     if (shortcuts && shortcuts == "false") {
         hideShortcuts();
@@ -82,7 +80,6 @@ document.getElementById("profile-form").addEventListener("submit", async (e) => 
             "favorites": profile.favorites,
             "date": profile.date,
             "deleted": false,
-            "old_pw": profile.password
         })
     });
     const updatedProfile = await updateReq.json();
@@ -125,7 +122,16 @@ const deleteProfile = async () => {
     const response = document.getElementById("profile-response");
     const timer = document.getElementById("profile-timer");
 
-    const deleteReq = await fetch("/api/user/delete", { method: "DELETE", body: JSON.stringify({ "username": profile.username, "email": profile.email, "password": profile.password, "deleted": false })});
+    const deleteReq = await fetch("/api/user/delete", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            "username": profile.username,
+            "email": profile.email,
+            "password": profile.password,
+            "deleted": false
+        })
+    });
     const deletedProfile = await deleteReq.json();
 
     if (deletedProfile === true) {

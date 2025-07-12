@@ -14,7 +14,5 @@ pub struct User {
     pub favorites: Option<Vec<i32>>,
     #[validate(length(min = 1))]
     pub date: Option<String>,
-    #[validate(length(min = 1))]
-    pub old_pw: String,
     pub deleted: bool,
 }
