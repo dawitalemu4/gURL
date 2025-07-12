@@ -218,14 +218,8 @@ pub async fn render_profile_update(Path(path): Path<PathParams>) -> Response {
     }
 }
 
-pub async fn render_profile_delete(Path(path): Path<PathParams>) -> Response {
-    let deleted = path.deleted.unwrap_or(false);
-
-    if deleted {
-        Html("<p>$  invalid token, try to log back in</p>".to_string()).into_response()
-    } else {
-        Html("<p>$  deleting account</p>".to_string()).into_response()
-    }
+pub async fn render_profile_delete() -> Response {
+    Html("<p>$  deleting account</p>".to_string()).into_response()
 }
 
 pub async fn render_home_shortcuts(Path(path): Path<PathParams>) -> Response {

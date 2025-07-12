@@ -1,5 +1,5 @@
 use std::sync::{Arc, Mutex};
-use std::time::Duration;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use axum::extract::{Path, State};
 use humantime::format_duration;
@@ -19,7 +19,9 @@ pub use request::*;
 pub use template::*;
 pub use user::*;
 
-use crate::models::{request::Request, user::User, deserialize_favorites_for_db, deserialize_bool_for_db};
+use crate::models::{
+    deserialize_bool_for_db, deserialize_favorites_for_db, request::Request, user::User,
+};
 
 pub type ConnectionState = State<Arc<Mutex<Connection>>>;
 
@@ -51,16 +53,13 @@ pub async fn get_all_requests_from_db(
         .lock()
         .map_err(|e| miette!("Global db can't block current thread {e}"))?;
 
-    match db
-        .prepare("SELECT * FROM request WHERE user_email = ?1 AND hidden = false ORDER BY id DESC")
-    {
-        Ok(rows) => {
-            let requests = map_requests(rows, &[email])?;
-
-            Ok(requests)
-        }
-        Err(e) => Err(miette!("{e}")),
-    }
+    Ok(map_requests(
+        db.prepare(
+            "SELECT * FROM request WHERE user_email = ?1 AND hidden = false ORDER BY id DESC",
+        )
+        .map_err(|e| miette!("Invalid statement: {e}"))?,
+        &[email],
+    )?)
 }
 
 pub async fn get_all_favorites_from_db(
@@ -73,29 +72,28 @@ pub async fn get_all_favorites_from_db(
         .lock()
         .map_err(|e| miette!("Global db can't block current thread {e}"))?;
 
-    let favorite_rows = match db.prepare(r#"SELECT favorites FROM "user" WHERE email = ?1"#) {
-        Ok(rows) => rows,
-        Err(e) => {
-            return Err(miette!("{e}"));
-        }
-    };
+    let favorite_ids = map_single_value(
+        db.prepare(r#"SELECT favorites FROM "user" WHERE email = ?1"#)
+            .map_err(|e| miette!("Invalid statement: {e}"))?,
+        &[email.clone()],
+        "favorite",
+    )?;
 
-    let favorite_ids = map_single_value(favorite_rows, &[email.clone()], "favorite")?;
     for favorite in favorite_ids {
-        let rows = match db.prepare(
-            r#"
+        let res = map_requests(
+            db.prepare(
+                r#"
                 SELECT * FROM request WHERE user_email = ?1 AND id = ?2 AND hidden = false 
                 ORDER BY id DESC
             "#,
-        ) {
-            Ok(rows) => rows,
-            Err(e) => {
-                return Err(miette!("{e}"));
-            }
-        };
+            )
+            .map_err(|e| miette!("Invalid statement: {e}"))?,
+            &[email.clone(), favorite],
+        )?;
 
-        let res = map_requests(rows, &[email.clone(), favorite])?;
-        favorite_requests.push(res[0].clone());
+        if let Some(favorite_request) = res.first() {
+            favorite_requests.push(favorite_request.clone());
+        }
     }
 
     Ok(favorite_requests)
@@ -135,7 +133,7 @@ pub fn map_single_value(
     Ok(parsed_rows)
 }
 
-pub fn map_user(mut statement: Statement<'_>, args: &[String]) -> Result<User> {
+pub fn map_user(mut statement: Statement<'_>, args: &[&String]) -> Result<Vec<User>> {
     let parsed_rows = statement
         .query_map(params_from_iter(args), |row| {
             Ok(User {
@@ -145,28 +143,37 @@ pub fn map_user(mut statement: Statement<'_>, args: &[String]) -> Result<User> {
                 favorites: deserialize_favorites_for_db(row.get(3)?),
                 date: row.get::<_, Option<String>>(4)?,
                 deleted: deserialize_bool_for_db(row.get(5)?),
-                old_pw: "".to_string()
             })
         })
         .map_err(|e| miette!("Error mapping rows to User: {e}"))?
         .map(|item| item.expect("Cannot unwrap User row item"))
         .collect::<Vec<_>>();
 
-    if parsed_rows.len() > 0 {
-        Ok(parsed_rows[0].clone())
-    } else {
-        Err(miette!("User error"))
-    }
+    Ok(parsed_rows)
 }
 
 // Template utils
 pub fn humanize_date(date: Option<String>) -> Result<String> {
-    let date: u64 = date
-        .unwrap_or(0.to_string())
-        .parse()
-        .map_err(|e| miette!("Could not parse date: {e}"))?;
+    let date = if let Some(date) = date {
+        let timestamp = date
+            .parse::<u64>()
+            .map_err(|e| miette!("Could not parse date to integer: {e}"))?;
+        let target_time = UNIX_EPOCH + Duration::from_millis(timestamp);
+        SystemTime::now()
+            .duration_since(target_time)
+            .map_err(|e| miette!("Could not get duration since provided date: {e}"))?
+    } else {
+        Duration::from_secs(0)
+    };
 
-    Ok(format_duration(Duration::from_millis(date)).to_string())
+    let human_date = format_duration(date)
+        .to_string()
+        .split_whitespace()
+        .take(3)
+        .collect::<Vec<_>>()
+        .join(" ");
+
+    Ok(human_date)
 }
 
 pub fn get_status_color(status: &Option<String>) -> String {

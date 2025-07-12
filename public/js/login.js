@@ -60,7 +60,6 @@ document.getElementById("login-form").addEventListener("submit", async (e) => {
             "password": password,
             "username": "doesntmatter",
             "favorites": null,
-            "old_pw": "",
             "deleted": false
         })
     });
