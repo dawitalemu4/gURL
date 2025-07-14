@@ -38,7 +38,7 @@ pub fn init_router(global_db: Arc<Mutex<rusqlite::Connection>>) -> Router {
             "/handle/request/favorites/{email}",
             get(render_favorites_list),
         )
-        .route("/grpcurl/request", post(execute_grpcurl_request))
+        .route("/grpcurl/request/{email}", post(execute_grpcurl_request))
         .route("/handle/login/{token}", get(render_login))
         .route("/handle/signup/{token}", get(render_signup))
         .route("/handle/profile/info/{token}", get(render_profile_info))

@@ -89,29 +89,37 @@ pub async fn create_request(
             .lock()
             .map_err(|e| miette!("Global db can't block current thread {e}"))?;
 
-        match map_requests(db.prepare(r#"
-            INSERT INTO request (user_email, url, method, metadata, payload, status, date, service, proto_file, hidden) 
-            VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10) RETURNING *
-        "#).map_err(|e| miette!("Invalid statement: {e}"))?, &[
-                    email,
-                    request.method.unwrap_or_default(),
-                    request.status.unwrap_or_default(),
-                    request.date,
-                    serialize_bool_for_db(request.hidden).to_string()
-                ]) {
+        match map_requests(
+            db.prepare(
+                r#"
+            INSERT INTO request (user_email, command, status, method, date, hidden) 
+            VALUES (?1, ?2, ?3, ?4, ?5, ?6) RETURNING *
+        "#,
+            )
+            .map_err(|e| miette!("Invalid statement: {e}"))?,
+            &[
+                email,
+                request.command,
+                request.status.unwrap_or_default(),
+                request.method.unwrap_or_default(),
+                request.date,
+                serialize_bool_for_db(request.hidden).to_string(),
+            ],
+        ) {
             Ok(mapped_request) => {
-                if let Some(parsed_request) = mapped_request.first() {
-
-                if request.id == 0 {
-                    Ok((
-                            StatusCode::NOT_FOUND
-                    )
-                        .into_response())
+                if let Some(parsed_request) = mapped_request.first()
+                    && parsed_request.id != Some(0)
+                {
+                    Ok((StatusCode::OK, Json(parsed_request)).into_response())
                 } else {
-                    Ok((StatusCode::OK, Json(request)).into_response())
+                    Ok((StatusCode::NOT_FOUND).into_response())
                 }
             }
-            Err(e) => Ok((StatusCode::INTERNAL_SERVER_ERROR, format!("Server Error: {e}")).into_response())
+            Err(e) => Ok((
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("Server Error: {e}"),
+            )
+                .into_response()),
         }
     })();
 

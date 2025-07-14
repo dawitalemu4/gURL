@@ -37,28 +37,6 @@ window.onload = function() {
     });
 };
 
-const showShortcuts = () => {
-    document.getElementById("shortcuts-modal").style.display = "flex";
-    document.getElementById("shortcuts-toggle").src = "/public/hide.webp";
-};
-
-const hideShortcuts = () => {
-    document.getElementById("shortcuts-modal").style.display = "none";
-    document.getElementById("shortcuts-toggle").src = "/public/show.webp";
-};
-
-const toggleShortcuts = () => {
-    const showShortcuts = localStorage.getItem("shortcuts");
-
-    if (showShortcuts && showShortcuts == "false") {
-        localStorage.setItem("shortcuts", "true");
-        window.location.reload();
-    } else {
-        localStorage.setItem("shortcuts", "false");
-        window.location.reload();
-    };
-};
-
 document.getElementById("profile-form").addEventListener("submit", async (e) => {
 
     e.preventDefault();
@@ -132,12 +110,11 @@ const deleteProfile = async () => {
             "deleted": false
         })
     });
-    const deletedProfile = await deleteReq.json();
 
-    if (deletedProfile === true) {
+    if (deleteReq.status == 200) {
 
         localStorage.clear();
-        htmx.ajax("GET", `/handle/profile/delete/${deletedProfile}`, { target: "#profile-response", swap: "innerHTML" });
+        htmx.ajax("GET", `/handle/profile/delete`, { target: "#profile-response", swap: "innerHTML" });
 
         setTimeout(() => {
             timer.innerHTML = "<p>$  redirecting in 3 secs.</p>";
@@ -156,11 +133,8 @@ const deleteProfile = async () => {
         }, 3500);
 
     } else {
-
-        htmx.ajax("GET", `/handle/profile/delete/null`, { target: "#profile-response", swap: "innerHTML" });
-
         setTimeout(() => {
-            response.innerHTML = "";
+            response.innerHTML = "Deletion failed, refresh and try again";
         }, 1500);
     };
 };

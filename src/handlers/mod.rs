@@ -28,8 +28,16 @@ pub type ConnectionState = State<Arc<Mutex<Connection>>>;
 #[serde_as]
 #[skip_serializing_none]
 #[derive(Serialize, Deserialize, Debug, Clone, Validate)]
+pub struct RequestBody {
+    #[validate(length(min = 1))]
+    command: String,
+}
+
+#[serde_as]
+#[skip_serializing_none]
+#[derive(Serialize, Deserialize, Debug, Clone, Validate)]
 pub struct PathParams {
-    #[validate(email)]
+    #[validate(length(min = 1))]
     email: Option<String>,
     #[validate(length(min = 1))]
     password: Option<String>,
@@ -180,30 +188,74 @@ pub fn get_status_color(status: &Option<String>) -> String {
     let status_colors = std::collections::HashMap::from([
         // Success
         ("0", "green"), // OK
+        ("OK", "green"),
         // Client Error
-        ("1", "red"),  // CANCELLED
-        ("2", "red"),  // UNKNOWN
-        ("3", "red"),  // INVALID_ARGUMENT
-        ("4", "red"),  // DEADLINE_EXCEEDED
-        ("5", "red"),  // NOT_FOUND
-        ("6", "red"),  // ALREADY_EXISTS
-        ("7", "red"),  // PERMISSION_DENIED
-        ("8", "red"),  // RESOURCE_EXHAUSTED
-        ("9", "red"),  // FAILED_PRECONDITION
+        ("1", "red"), // CANCELLED
+        ("CANCELLED", "red"),
+        ("2", "red"), // UNKNOWN
+        ("UNKNOWN", "red"),
+        ("3", "red"), // INVALID_ARGUMENT
+        ("INVALID_ARGUMENT", "red"),
+        ("4", "red"), // DEADLINE_EXCEEDED
+        ("DEADLINE_EXCEEDED", "red"),
+        ("5", "red"), // NOT_FOUND
+        ("NOT_FOUND", "red"),
+        ("6", "red"), // ALREADY_EXISTS
+        ("ALREADY_EXISTS", "red"),
+        ("7", "red"), // PERMISSION_DENIED
+        ("PERMISSION_DENIED", "red"),
+        ("8", "red"), // RESOURCE_EXHAUSTED
+        ("RESOURCE_EXHAUSTED", "red"),
+        ("9", "red"), // FAILED_PRECONDITION
+        ("FAILED_PRECONDITION", "red"),
         ("10", "red"), // ABORTED
+        ("ABORTED", "red"),
         ("11", "red"), // OUT_OF_RANGE
+        ("OUT_OF_RANGE", "red"),
         ("12", "red"), // UNIMPLEMENTED
+        ("UNIMPLEMENTED", "red"),
         // Server Error
         ("13", "orange"), // INTERNAL
+        ("INTERNAL", "orange"),
         ("14", "orange"), // UNAVAILABLE
+        ("UNAVAILABLE", "orange"),
         ("15", "orange"), // DATA_LOSS
-        ("16", "red"),    // UNAUTHENTICATED
+        ("DATA_LOSS", "orange"),
+        ("16", "red"), // UNAUTHENTICATED
+        ("UNAUTHENTICATED", "red"),
         // Custom
         ("other", "yellow"),
     ]);
 
     status_colors
         .get(status.clone().unwrap_or("other".to_string()).as_str())
-        .map_or("other", |status| status)
+        .map_or("yellow", |status| status)
         .to_string()
+}
+
+pub fn get_service_name(command: &String) -> String {
+    // let full_service = command.split(" ").last().unwrap_or_default();
+    // let address = {
+    //     let parts = command.split(" ").collect::<Vec<&str>>();
+    //     if parts.len() >= 2 {
+    //         parts[parts.len() - 2]
+    //     } else {
+    //         command.split(":").last().unwrap_or_default()
+    //     }
+    // };
+
+    // format!(
+    //     "{address} {}",
+    //     full_service
+    //         .split("/")
+    //         .next()
+    //         .unwrap_or(full_service)
+    //         .to_string()
+    // )
+
+    command
+        .split_whitespace()
+        .filter(|word| !word.starts_with('-'))
+        .collect::<Vec<_>>()
+        .join(" ")
 }

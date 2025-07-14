@@ -110,13 +110,12 @@ pub async fn update_user(State(state): ConnectionState, Json(mut user): Json<Use
 
         user.password = hash_password(&user.password)?;
 
-        match map_user(db
-            .prepare(r#"UPDATE "user" SET username = ?1, password = ?2 WHERE email = ?3"#)
-            .map_err(|e| miette!("Invalid statement: {e}"))?, &[&user.username, &user.password, &user.email])
-        {
-            Ok(_) => {
-                Ok((StatusCode::OK, Json(create_jwt(user)?)).into_response())
-            }
+        match map_user(
+            db.prepare(r#"UPDATE "user" SET username = ?1, password = ?2 WHERE email = ?3"#)
+                .map_err(|e| miette!("Invalid statement: {e}"))?,
+            &[&user.username, &user.password, &user.email],
+        ) {
+            Ok(_) => Ok((StatusCode::OK, Json(create_jwt(user)?)).into_response()),
             Err(e) => Ok((
                 StatusCode::INTERNAL_SERVER_ERROR,
                 format!("Server Error: {e}"),
@@ -137,13 +136,12 @@ pub async fn delete_user(State(state): ConnectionState, Json(user): Json<User>) 
             .lock()
             .map_err(|e| miette!("Global db can't block current thread {e}"))?;
 
-        match map_user(db
-            .prepare(r#"UPDATE "user" SET deleted = true WHERE email = ?1 RETURNING *"#)
-            .map_err(|e| miette!("Invalid statement: {e}"))?, &[&user.email])
-        {
-            Ok(_) => {
-                Ok((StatusCode::OK, Json(true)).into_response())
-            }
+        match map_user(
+            db.prepare(r#"UPDATE "user" SET deleted = true WHERE email = ?1 RETURNING *"#)
+                .map_err(|e| miette!("Invalid statement: {e}"))?,
+            &[&user.email],
+        ) {
+            Ok(_) => Ok((StatusCode::OK, Json(true)).into_response()),
             Err(e) => Ok((
                 StatusCode::INTERNAL_SERVER_ERROR,
                 format!("Server Error: {e}"),
@@ -164,18 +162,16 @@ pub async fn update_favorites(State(state): ConnectionState, Json(user): Json<Us
             .lock()
             .map_err(|e| miette!("Global db can't block current thread {e}"))?;
 
-        match map_user(db
-            .prepare(r#"UPDATE "user" SET favorites = ?1 WHERE email = ?2 AND deleted = false"#)
-            .map_err(|e| miette!("Invalid statement: {e}"))?,
-                    &[&serialize_favorites_for_db(&user.favorites), &user.email],
-                )
-        {
+        match map_user(
+            db.prepare(r#"UPDATE "user" SET favorites = ?1 WHERE email = ?2 AND deleted = false"#)
+                .map_err(|e| miette!("Invalid statement: {e}"))?,
+            &[&serialize_favorites_for_db(&user.favorites), &user.email],
+        ) {
             Ok(mapped_user) => {
                 if let Some(parsed_user) = mapped_user.first() {
                     Ok((StatusCode::OK, Json(create_jwt(parsed_user.clone())?)).into_response())
                 } else {
                     Ok((StatusCode::BAD_REQUEST).into_response())
-
                 }
             }
             Err(e) => Ok((
