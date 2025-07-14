@@ -21,28 +21,6 @@ window.onload = () => {
     });
 };
 
-const showShortcuts = () => {
-    document.getElementById("shortcuts-modal").style.display = "flex";
-    document.getElementById("shortcuts-toggle").src = "/public/hide.webp";
-};
-
-const hideShortcuts = () => {
-    document.getElementById("shortcuts-modal").style.display = "none";
-    document.getElementById("shortcuts-toggle").src = "/public/show.webp";
-};
-
-const toggleShortcuts = () => {
-    const showShortcuts = localStorage.getItem("shortcuts");
-
-    if (showShortcuts && showShortcuts == "false") {
-        localStorage.setItem("shortcuts", "true");
-        window.location.reload();
-    } else {
-        localStorage.setItem("shortcuts", "false");
-        window.location.reload();
-    };
-};
-
 document.getElementById("login-form").addEventListener("submit", async (e) => {
 
     e.preventDefault();
@@ -63,7 +41,7 @@ document.getElementById("login-form").addEventListener("submit", async (e) => {
             "deleted": false
         })
     });
-    const authenticated = await authReq.json();
+    const authenticated = authReq.ok ? await authReq.json() : null;
 
     if (typeof authenticated === "string" && authReq.status == 200) {
 

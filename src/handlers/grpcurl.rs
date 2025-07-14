@@ -1,4 +1,8 @@
-use std::{os::windows::process::CommandExt, process::Command};
+use std::{
+    os::windows::process::CommandExt,
+    process::Command,
+    time::{SystemTime, UNIX_EPOCH},
+};
 
 use axum::{
     extract::{Json, Path, State},
@@ -9,28 +13,24 @@ use miette::{Result, miette};
 use regex::Regex;
 
 use crate::{
-    handlers::{ConnectionState, PathParams, create_request},
+    handlers::{ConnectionState, PathParams, RequestBody, create_request},
     models::request::Request,
 };
 
 pub async fn execute_grpcurl_request(
     State(state): ConnectionState,
     Path(path): Path<PathParams>,
-    Json(request): Json<Request>,
+    Json(request): Json<RequestBody>,
 ) -> Response {
     let res: Result<Response> = (async || {
         let output = Command::new("grpcurl").raw_arg(&request.command)
             .output()
-            .map_err(|e| miette!("Failed to execute grpcurl command: {}", e))?;
+            .map_err(|e| miette!("Failed to execute grpcurl command, may not be installed: {}", e))?;
 
         let response = String::from_utf8_lossy(&output.stdout).to_string();
         let error = String::from_utf8_lossy(&output.stderr).to_string();
 
-        println!("grpcurl output - stdout: {}, stderr: {}", response, error);
-
-        let exit_code = output.status.code().unwrap_or(0);
-
-        let status_regex = Regex::new(r"Code:\s*(\w+)").unwrap();
+        let status_regex = Regex::new(r"Code:\s*(\w+)").map_err(|e| miette!("Could not unwrap status regex: {e}"))?;
         let status = if let Some(caps) = status_regex.captures(&error) {
             caps.get(1).map(|m| m.as_str()).unwrap_or("UNKNOWN")
         } else if output.status.success() {
@@ -39,15 +39,41 @@ pub async fn execute_grpcurl_request(
             "ERROR"
         };
 
-        let mut final_request = request;
-        final_request.status = Some(status.to_string());
+        if response.is_empty() {
+            return Ok((
+                    StatusCode::OK,
+                    Html(format!("$  error: {}<br /><br />status: {}", error, status)),
+            )
+                .into_response());
+        }
+
+        let method = if request.command.contains("list") {
+            Some("list".to_string())
+        } else if let Some(service) = request.command.split(".").last() {
+            if service.contains("/") {
+                Some(service.split("/").last().unwrap_or_default().to_string())
+            } else {
+                Some(service.to_string())
+            }
+        } else { None };
 
         create_request(
             State(state),
-            Path(path),
-            Json(final_request),
+            Path(path.clone()),
+            Json(Request {
+                id: None,
+                user_email: path.email,
+                command: request.command,
+                status: Some(status.to_string()),
+                method,
+                date: SystemTime::now()
+                    .duration_since(UNIX_EPOCH).unwrap_or_default()
+                    .as_millis().to_string(),
+                hidden: false
+            }),
         ).await;
 
+        let exit_code = output.status.code().unwrap_or(0);
         if exit_code == 1 && error.contains("connection refused") {
             return Ok((StatusCode::OK, Html(format!(
                 "<p>$  error: Connection refused, probably can't connect to gRPC server. Check if the server is running and the address is correct.</p>"

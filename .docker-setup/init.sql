@@ -3,19 +3,14 @@ PRAGMA foreign_keys = ON;
 CREATE TABLE IF NOT EXISTS request (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_email TEXT NOT NULL,
-    url TEXT NOT NULL,
-    method TEXT NOT NULL,
-    metadata TEXT,
-    payload TEXT,
+    command TEXT NOT NULL,
     status TEXT NOT NULL,
-    service TEXT,
-    proto_file TEXT,
+    method TEXT NOT NULL,
     date TEXT NOT NULL,
     hidden INTEGER NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS "user" (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT NOT NULL,
     email TEXT NOT NULL UNIQUE,
     password TEXT NOT NULL,
@@ -31,6 +26,7 @@ CREATE TABLE IF NOT EXISTS request (
     user_email TEXT NOT NULL,
     command TEXT NOT NULL,
     status TEXT NOT NULL,
+    method TEXT NOT NULL,
     date TEXT NOT NULL,
     hidden INTEGER NOT NULL,
     FOREIGN KEY (user_email) REFERENCES "user"(email)

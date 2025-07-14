@@ -14,7 +14,7 @@ window.onload = () => {
     const shortcuts = localStorage.getItem("shortcuts");
     const shortcutsModal = document.getElementById("shortcuts-toggle-modal");
     const tokenString = localStorage.getItem("auth");
-    const email = tokenString ? parseJwt(tokenString).email : null;
+    const email = tokenString ? parseJwt(tokenString).email : "anon";
 
     if (shortcuts && shortcuts == "false") {
         hideShortcuts();
@@ -52,15 +52,17 @@ const formatResponse = () => {
 
     const responseTextarea = document.getElementById("response-textarea");
 
-    if (responseTextarea.textContent.charAt(0) === "{" || responseTextarea.textContent.charAt(0) === "[") {
-        responseTextarea.textContent = JSON.stringify(JSON.parse(responseTextarea.textContent), null, 4) + "\n";
-    } else if (responseTextarea.textContent.charAt(0) === "<") {
+    if (responseTextarea) {
+        if (responseTextarea.textContent.charAt(0) === "{" || responseTextarea.textContent.charAt(0) === "[") {
+            responseTextarea.textContent = JSON.stringify(JSON.parse(responseTextarea.textContent), null, 4) + "\n";
+        } else if (responseTextarea.textContent.charAt(0) === "<") {
 
-        responseTextarea.textContent = html_beautify(responseTextarea.textContent);
+            responseTextarea.textContent = html_beautify(responseTextarea.textContent);
 
-        setTimeout(() => {
-            document.title = "gURL";
-        }, 200);
+            setTimeout(() => {
+                document.title = "gURL";
+            }, 200);
+        };
     };
 };
 
@@ -82,33 +84,6 @@ const fillForm = () => {
     };
 };
 
-const logout = () => {
-    localStorage.removeItem("auth");
-    window.location.href = "/";
-};
-
-const showShortcuts = () => {
-    document.getElementById("shortcuts-modal").style.display = "flex";
-    document.getElementById("shortcuts-toggle").src = "/public/hide.webp";
-};
-
-const hideShortcuts = () => {
-    document.getElementById("shortcuts-modal").style.display = "none";
-    document.getElementById("shortcuts-toggle").src = "/public/show.webp";
-};
-
-const toggleShortcuts = () => {
-    const showShortcuts = localStorage.getItem("shortcuts");
-
-    if (showShortcuts && showShortcuts == "false") {
-        localStorage.setItem("shortcuts", "true");
-        window.location.reload();
-    } else {
-        localStorage.setItem("shortcuts", "false");
-        window.location.reload();
-    };
-};
-
 const emptyForm = () => {
     document.getElementById("new-request").reset();
 };
@@ -121,7 +96,7 @@ const removeItem = (array, id) => {
 const toggleHistoryList = () => {
 
     const tokenString = localStorage.getItem("auth");
-    const email = tokenString ? parseJwt(tokenString).email : null;
+    const email = tokenString ? parseJwt(tokenString).email : "anon";
     const favoritesModal = document.getElementById("favorites-modal");
     const historyModal = document.getElementById("history-modal");
 
@@ -148,7 +123,7 @@ const toggleHistoryList = () => {
 const toggleFavoritesList = () => {
 
     const tokenString = localStorage.getItem("auth");
-    const email = tokenString ? parseJwt(tokenString).email : null;
+    const email = tokenString ? parseJwt(tokenString).email : "anon";
     const historyModal = document.getElementById("history-modal");
     const favoritesModal = document.getElementById("favorites-modal");
 
@@ -160,7 +135,7 @@ const toggleFavoritesList = () => {
         favoritesModal.style.display = "none";
     } else {
 
-        if (email === null) {
+        if (email === "anon") {
 
             document.getElementById("favorites-modal").innerHTML = `
                 <br />
@@ -254,7 +229,7 @@ const hideRequest = async () => {
 
     const selectedItem = document.activeElement;
     const tokenString = localStorage.getItem("auth");
-    const email = tokenString ? parseJwt(tokenString).email : null;
+    const email = tokenString ? parseJwt(tokenString).email : "anon";
 
     if (selectedItem.className === "history-item" || selectedItem.className === "favorites-item") {
 

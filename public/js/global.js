@@ -1,5 +1,34 @@
 const currentPage = window.location.pathname;
 
+// Global
+function logout() {
+    localStorage.removeItem("auth");
+    window.location.href = "/";
+};
+
+function showShortcuts() {
+    document.getElementById("shortcuts-modal").style.display = "flex";
+    document.getElementById("shortcuts-toggle").src = "/public/hide.webp";
+};
+
+function hideShortcuts() {
+    document.getElementById("shortcuts-modal").style.display = "none";
+    document.getElementById("shortcuts-toggle").src = "/public/show.webp";
+};
+
+function toggleShortcuts() {
+    const showShortcuts = localStorage.getItem("shortcuts");
+
+    if (showShortcuts && showShortcuts == "false") {
+        localStorage.setItem("shortcuts", "true");
+        window.location.reload();
+    } else {
+        localStorage.setItem("shortcuts", "false");
+        window.location.reload();
+    };
+};
+
+// Shortcuts
 const shortuctKeys = {
     "selectRequest": "Enter",
     "empty": "KeyJ",
@@ -113,6 +142,7 @@ document.addEventListener("keydown", (e) => {
             if ((e.metaKey || e.ctrlKey) && e.altKey && e.code === homeKeys[i]) {
                 executeHomeShortcuts(homeKeys[i]);
             } else if (e.code === "Enter") {
+                e.preventDefault();
                 executeHomeShortcuts(homeKeys[0]);
             };
         };

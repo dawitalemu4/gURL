@@ -11,6 +11,8 @@ use crate::{
     get_status_color, humanize_date, parse_jwt,
 };
 
+use super::get_service_name;
+
 #[derive(Template, Debug)]
 #[template(path = "index.html")]
 pub struct IndexTemplate {
@@ -204,8 +206,8 @@ pub async fn render_profile_update(Path(path): Path<PathParams>) -> Response {
             Ok((
                 StatusCode::OK,
                 Html(format!(
-                    "<p>$  account updated! username: {}, email: {}, password: {}</p>",
-                    user.username, user.email, user.password
+                    "<p>$  account updated! username: {}, email: {}</p>",
+                    user.username, user.email
                 )),
             )
                 .into_response())
@@ -263,7 +265,7 @@ pub async fn render_new_request(Path(path): Path<PathParams>) -> Response {
     let html = format!(
         r##"
         <form id="new-request"
-            hx-post="/grpcurl/request"
+            hx-post="/grpcurl/request/{email}"
             hx-target="#request-response"
             hx-swap="innerHTML"
             hx-ext="json-enc"
@@ -271,7 +273,6 @@ pub async fn render_new_request(Path(path): Path<PathParams>) -> Response {
             hx-on::after-request="formatResponse()"
         >
             $  grpcurl <textarea name="command" type="text" placeholder="command" autofocus></textarea>
-            <input name="user_email" value="{email}" hidden />
             <input type="submit" value="execute" />
         </form>
         <div id="request-response"></div>
@@ -297,6 +298,7 @@ pub async fn render_history_list(state: ConnectionState, Path(path): Path<PathPa
         for (i, request) in requests.iter().enumerate() {
             let date = humanize_date(Some(request.date.clone()))?;
             let status_color = get_status_color(&request.status);
+            let service_name = get_service_name(&request.command);
 
             html_history_list.push_str(&format!(
                 r#"
@@ -317,11 +319,11 @@ pub async fn render_history_list(state: ConnectionState, Path(path): Path<PathPa
                     </div>
                     "#,
                 i + 1,
-                request.id,
+                request.id.unwrap_or_default(),
                 status_color,
                 request.status.clone().unwrap_or_default(),
                 request.method.clone().unwrap_or_default(),
-                request.command,
+                service_name,
                 date,
                 request.command,
             ));
@@ -355,6 +357,7 @@ pub async fn render_favorites_list(
         for (i, request) in favorites.iter().enumerate() {
             let date = humanize_date(Some(request.date.clone()))?;
             let status_color = get_status_color(&request.status);
+            let service_name = get_service_name(&request.command);
 
             html_favorites_list.push_str(&format!(
                 r#"
@@ -374,11 +377,11 @@ pub async fn render_favorites_list(
                     </div>
                     "#,
                 i + 1,
-                request.id,
+                request.id.unwrap_or_default(),
                 status_color,
                 request.status.clone().unwrap_or_default(),
                 request.method.clone().unwrap_or_default(),
-                request.command,
+                service_name,
                 date,
                 request.command,
             ));

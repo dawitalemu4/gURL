@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="/public/css/globals.css">
     <link rel="stylesheet" href="/public/css/{{ screen }}.css">
     <script src="/public/js/{{ screen }}.js" defer></script>
-    <script src="/public/js/shortcuts.js" defer></script>
+    <script src="/public/js/global.js" defer></script>
     <link rel="icon" href="/public/favicon.ico">
     <title>gURL</title>
 {% endblock head %}
@@ -119,14 +119,19 @@
                 <div><kbd>enter</kbd> - login</div>
                 <div><kbd>tab</kbd> - next text box</div>
                 <div><kbd>shift</kbd> + <kbd>tab</kbd> - previous text box</div>
+                <div><kbd>ctrl</kbd> + <kbd>alt</kbd> + <kbd>s</kbd> - signup page</div>
+                <div><kbd>ctrl</kbd> + <kbd>alt</kbd> + <kbd>h</kbd> - home page</div>
             {% elif screen == "signup" %}
                 <div><kbd>enter</kbd> - signup</div>
                 <div><kbd>tab</kbd> - next text box</div>
                 <div><kbd>shift</kbd> + <kbd>tab</kbd> - previous text box</div>
+                <div><kbd>ctrl</kbd> + <kbd>alt</kbd> + <kbd>l</kbd> - login page</div>
+                <div><kbd>ctrl</kbd> + <kbd>alt</kbd> + <kbd>h</kbd> - home page</div>
             {% elif screen == "profile" %}
                 <div><kbd>enter</kbd> - update profile</div>
                 <div><kbd>tab</kbd> - next text box</div>
                 <div><kbd>shift</kbd> + <kbd>tab</kbd> - previous text box</div>
+                <div><kbd>ctrl</kbd> + <kbd>alt</kbd> + <kbd>h</kbd> - home page</div>
             {% endif %}           
         </div>
         <div id="shortcuts-toggle-modal">
