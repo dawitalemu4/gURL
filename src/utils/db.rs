@@ -22,7 +22,7 @@ pub fn db(init: bool, test: bool) -> Result<Connection> {
             None => panic!("sqlite connection path is non-existent"),
         };
 
-        println!("sqlite database file located at {db_path}");
+        println!("sqlite database file located {db_path}");
         let db_initialized = connection
             .table_exists(None, "request")
             .map_err(|e| miette!("Could not query request table{e}"))?;

@@ -1,13 +1,15 @@
+ARG RUST_VERSION=1.88
+
 # for you
 
-# FROM dawitalemu4/gURL:latest AS builder
+# FROM dawitalemu4/gurl:latest AS builder
 
 
-# FROM rust:1.88
+# FROM rust:${RUST_VERSION}
 
-# RUN apt-get update && apt-get install -y grpcurl
+# RUN snap install grpcurl
 
-# COPY --from=builder /gURL /gURL
+# COPY --from=builder /gURL/.target/release/gURL /gURL
 # COPY --from=builder /public /public
 # COPY --from=builder /templates /templates 
 
@@ -18,50 +20,61 @@
 
 # for me (push to docker hub)
 
-# FROM rust:1.88 AS builder
+# FROM rust:${RUST_VERSION} AS builder
 
 # COPY . .
 
-# RUN cargo build -o /gURL
+# RUN cargo build --release --target-dir /gURL
 
-# docker image build -t gURL .
-# docker image tag gURL dawitalemu4/gURL:latest
-# docker push dawitalemu4/gURL:latest
+# docker image build -t gurl .
+# docker image tag gurl dawitalemu4/gurl:latest
+# docker push dawitalemu4/gurl:latest
 
 
 # for me (test locally)
 
-FROM rust:1.88 AS builder
+FROM rust:${RUST_VERSION} AS builder
+
+WORKDIR /app
 
 COPY . .
 
-RUN cargo build -o /gURL
+RUN cargo build --release
 
 
-FROM rust:1.88
+FROM archlinux:base
 
-RUN apt-get update && apt-get install -y grpcurl
+RUN pacman -Syu --noconfirm curl && \
+    curl -L https://github.com/fullstorydev/grpcurl/releases/download/v1.9.3/grpcurl_1.9.3_linux_x86_64.tar.gz -o /tmp/grpcurl.tar.gz && \
+    tar -xzf /tmp/grpcurl.tar.gz -C /tmp && \
+    mv /tmp/grpcurl /usr/local/bin/ && \
+    chmod +x /usr/local/bin/grpcurl && \
+    rm /tmp/grpcurl.tar.gz
 
-COPY --from=builder /gURL /gURL
-COPY --from=builder /public /public
-COPY --from=builder /templates /templates 
+COPY --from=builder /app/target/release/gURL /usr/local/bin/gURL
+COPY --from=builder /app/public /app/public
+COPY --from=builder /app/templates /app/templates 
+COPY --from=builder /app/init.sql /app/init.sql 
 
 COPY .env .
 
-CMD ["/gURL"]
+RUN chmod +x /usr/local/bin/gURL
+
+WORKDIR /app
+
+CMD ["gURL"]
 
 
 # for me (test published image)
 
-# FROM dawitalemu4/gURL:latest AS builder
+# FROM dawitalemu4/gurl:latest AS builder
 
 
-# # change the next line to FROM --platform=linux/amd64 rust:1.88 if you are a mac user and getting this error: "rosetta error: failed to open elf at /lib64/ld-linux-x86-64.so.2"
-# FROM rust:1.88
+# FROM rust:${RUST_VERSION}
 
-# RUN apt-get update && apt-get install -y grpcurl
+# RUN snap install grpcurl
 
-# COPY --from=builder /gURL /gURL
+# COPY --from=builder /gURL/.target/release/gURL /gURL
 # COPY --from=builder /public /public
 # COPY --from=builder /templates /templates 
 

@@ -1,5 +1,5 @@
 services:
-  gURL:
+  gurl:
     env_file:
       - .env
     build:

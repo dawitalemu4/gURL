@@ -2,7 +2,6 @@
 .docker-setup
 .tmp
 .air.toml
-.env
 .gitignore
 LICENSE.txt
 README.md
