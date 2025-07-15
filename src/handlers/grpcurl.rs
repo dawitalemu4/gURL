@@ -1,5 +1,7 @@
+#[cfg(windows)]
+use std::os::windows::process::CommandExt;
+
 use std::{
-    os::windows::process::CommandExt,
     process::Command,
     time::{SystemTime, UNIX_EPOCH},
 };
@@ -23,7 +25,13 @@ pub async fn execute_grpcurl_request(
     Json(request): Json<RequestBody>,
 ) -> Response {
     let res: Result<Response> = (async || {
+        #[cfg(windows)]
         let output = Command::new("grpcurl").raw_arg(&request.command)
+            .output()
+            .map_err(|e| miette!("Failed to execute grpcurl command, may not be installed: {}", e))?;
+
+        #[cfg(not(windows))]
+        let output = Command::new("grpcurl").args(&request.command.split_whitespace().collect::<Vec<_>>())
             .output()
             .map_err(|e| miette!("Failed to execute grpcurl command, may not be installed: {}", e))?;
 

@@ -1,6 +1,6 @@
 [package]
 name = "gURL"
-version = "0.1.0"
+version = "1.0.0"
 edition = "2024"
 
 [lints.rust]
@@ -52,7 +52,6 @@ used_underscore_binding = "warn"
 askama = "0.14.0"
 axum = "0.8.4"
 argon2 = { version = "0.5.3", features = ["password-hash"] }
-cargo-husky = { version = "1.5.0", features = ["user-hooks"] }
 dotenv = "0.15.0"
 humantime = "2.2.0"
 jsonwebtoken = "9.0.0"
