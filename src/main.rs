@@ -1,9 +1,14 @@
 use std::sync::{Arc, Mutex};
 
+use include_dir::{include_dir, Dir};
 use miette::{Result, miette};
 use tokio::net::TcpListener;
 
 use gURL::{db::db, env::env, init_router};
+
+// For release binary
+static _TEMPLATES: Dir<'static> = include_dir!("$CARGO_MANIFEST_DIR/templates");
+static _PUBLIC: Dir<'static> = include_dir!("$CARGO_MANIFEST_DIR/public");
 
 #[tokio::main]
 async fn main() -> Result<()> {
