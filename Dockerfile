@@ -39,7 +39,7 @@ WORKDIR /app
 
 COPY . .
 
-RUN cargo build --release
+RUN cargo build --release --features docker
 
 
 FROM archlinux:base
@@ -52,17 +52,11 @@ RUN pacman -Syu --noconfirm curl && \
     rm /tmp/grpcurl.tar.gz
 
 COPY --from=builder /app/target/release/gURL /usr/local/bin/gURL
-COPY --from=builder /app/public /app/public
-COPY --from=builder /app/templates /app/templates 
-COPY --from=builder /app/init.sql /app/init.sql 
+COPY --from=builder /app/init.sql /init.sql 
 
 COPY .env .
 
-RUN chmod +x /usr/local/bin/gURL
-
-WORKDIR /app
-
-CMD ["gURL"]
+CMD ["gURL", "--features", "docker"]
 
 
 # for me (test published image)

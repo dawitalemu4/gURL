@@ -11,8 +11,14 @@ pub fn db(init: bool, test: bool) -> Result<Connection> {
             .map_err(|e| miette!("sqlite connection could not be opened: {e}"))?
     } else {
         let env = env()?;
-        Connection::open(env.db_path)
-            .map_err(|e| miette!("sqlite connection could not be opened: {e}"))?
+
+        if cfg!(feature = "docker") {
+            Connection::open(format!("/.docker-db/{}.sqlite3", env.db_name))
+                .map_err(|e| miette!("sqlite connection could not be opened: {e}"))?
+        } else {
+            Connection::open(format!("{}.sqlite3", env.db_name))
+                .map_err(|e| miette!("sqlite connection could not be opened: {e}"))?
+        }
     };
 
     if init {
