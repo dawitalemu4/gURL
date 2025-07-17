@@ -142,7 +142,6 @@ document.addEventListener("keydown", (e) => {
             if ((e.metaKey || e.ctrlKey) && e.altKey && e.code === homeKeys[i]) {
                 executeHomeShortcuts(homeKeys[i]);
             } else if (e.code === "Enter") {
-                e.preventDefault();
                 executeHomeShortcuts(homeKeys[0]);
             };
         };

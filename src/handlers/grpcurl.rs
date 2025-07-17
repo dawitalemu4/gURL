@@ -26,12 +26,12 @@ pub async fn execute_grpcurl_request(
 ) -> Response {
     let res: Result<Response> = (async || {
         #[cfg(windows)]
-        let output = Command::new("grpcurl").raw_arg(&request.command)
+        let output = Command::new("grpcurl").raw_arg(&request.command.trim_end())
             .output()
             .map_err(|e| miette!("Failed to execute grpcurl command, may not be installed: {}", e))?;
 
         #[cfg(not(windows))]
-        let output = Command::new("grpcurl").args(&request.command.split_whitespace().collect::<Vec<_>>())
+        let output = Command::new("grpcurl").args(&request.command.trim_end().split_whitespace().collect::<Vec<_>>())
             .output()
             .map_err(|e| miette!("Failed to execute grpcurl command, may not be installed: {}", e))?;
 
@@ -48,11 +48,19 @@ pub async fn execute_grpcurl_request(
         };
 
         if response.is_empty() {
-            return Ok((
-                    StatusCode::OK,
-                    Html(format!("$  error: {}<br /><br />status: {}", error, status)),
-            )
-                .into_response());
+            if cfg!(feature = "docker") && error.contains("Failed to dial target host") {
+                return Ok((
+                        StatusCode::OK,
+                        Html(format!("$  error: may not be using host.docker.internal. {}<br /><br />status: {}", error, status)),
+                )
+                    .into_response());
+            } else {
+                return Ok((
+                        StatusCode::OK,
+                        Html(format!("$  error: {}<br /><br />status: {}", error, status)),
+                )
+                    .into_response());
+            }
         }
 
         let method = if request.command.contains("list") {

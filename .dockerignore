@@ -1,8 +1,11 @@
+.cargo
+.docker-db
 .git
 .docker-setup
-.tmp
-.air.toml
+.env
+target
 .gitignore
+gURL.sqlite3
 LICENSE.txt
 README.md
 startup.sh
