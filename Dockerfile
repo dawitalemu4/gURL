@@ -59,7 +59,7 @@ RUN cargo build --release --features docker
 
 FROM archlinux:base
 
-RUN curl L https://github.com/fullstorydev/grpcurl/releases/download/v1.9.3/grpcurl_1.9.3_linux_x86_64.tar.gz -o /tmp/grpcurl.tar.gz && \ 
+RUN curl -L https://github.com/fullstorydev/grpcurl/releases/download/v1.9.3/grpcurl_1.9.3_linux_x86_64.tar.gz -o /tmp/grpcurl.tar.gz && \ 
    tar -xzf /tmp/grpcurl.tar.gz -C /usr/local/bin/
 
 COPY --from=builder /app/target/release/gURL /usr/local/bin/gURL

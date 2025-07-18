@@ -163,7 +163,7 @@ pub async fn update_favorites(State(state): ConnectionState, Json(user): Json<Us
             .map_err(|e| miette!("Global db can't block current thread {e}"))?;
 
         match map_user(
-            db.prepare(r#"UPDATE "user" SET favorites = ?1 WHERE email = ?2 AND deleted = false"#)
+            db.prepare(r#"UPDATE "user" SET favorites = ?1 WHERE email = ?2 AND deleted = false RETURNING *"#)
                 .map_err(|e| miette!("Invalid statement: {e}"))?,
             &[&serialize_favorites_for_db(&user.favorites), &user.email],
         ) {

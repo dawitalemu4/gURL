@@ -23,7 +23,7 @@ pub fn init_router(global_db: Arc<Mutex<rusqlite::Connection>>) -> Router {
             get(get_all_favorite_requests),
         )
         .route("/api/request/new/{email}", post(create_request))
-        .route("/api/request/delete/{email}/{req_id}", post(hide_request))
+        .route("/api/request/delete/{email}/{id}", delete(hide_request))
         // Template routes
         .route("/", get(render_page))
         .route("/login", get(render_page))

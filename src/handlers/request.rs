@@ -133,14 +133,14 @@ pub async fn hide_request(State(state): ConnectionState, Path(path): Path<PathPa
     let res: Result<Response> =
         (|| {
             let email = path.email.unwrap_or("anon".to_string());
-            let request_id = path.request_id.expect("Missing request id");
+            let request_id = path.id.expect("Missing request id");
             let db = state
                 .lock()
                 .map_err(|e| miette!("Global db can't block current thread {e}"))?;
 
             match map_requests(db.prepare(
             "UPDATE request SET hidden = true WHERE user_email = ?1 AND id = ?2 RETURNING *",
-        ).map_err(|e| miette!("Invalid statement: {e}"))?, &[email, request_id]) {
+        ).map_err(|e| miette!("Invalid statement: {e}"))?, &[email, request_id.to_string()]) {
             Ok(mapped_request) => {
                 if let Some(parsed_request) = mapped_request.first() {
                     if parsed_request.hidden {

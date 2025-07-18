@@ -1,14 +1,3 @@
-const parseJwt = (token) => {
-
-    const base64Url = token.split(".")[1];
-    const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
-    const jsonPayload = decodeURIComponent(window.atob(base64).split("").map(function(c) {
-        return "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2);
-    }).join(""));
-
-    return JSON.parse(JSON.parse(jsonPayload).sub);
-};
-
 window.onload = function() {
 
     const shortcuts = localStorage.getItem("shortcuts");
@@ -57,7 +46,7 @@ document.getElementById("profile-form").addEventListener("submit", async (e) => 
             "password": password.value,
             "favorites": profile.favorites,
             "date": profile.date,
-            "deleted": false,
+            "deleted": false
         })
     });
     const updatedProfile = await updateReq.json();
@@ -107,7 +96,9 @@ const deleteProfile = async () => {
             "username": profile.username,
             "email": profile.email,
             "password": profile.password,
-            "deleted": false
+            "favorites": profile.favorites,
+            "date": profile.date,
+            "deleted": true 
         })
     });
 

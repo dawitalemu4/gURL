@@ -13,10 +13,10 @@ pub fn db(init: bool, test: bool) -> Result<Connection> {
         let env = env()?;
 
         if cfg!(feature = "docker") {
-            Connection::open(format!("/.docker-db/{}.sqlite3", env.db_name))
+            Connection::open(format!("/.docker-db/{}", env.db_name))
                 .map_err(|e| miette!("sqlite connection could not be opened: {e}"))?
         } else {
-            Connection::open(format!("{}.sqlite3", env.db_name))
+            Connection::open(env.db_name)
                 .map_err(|e| miette!("sqlite connection could not be opened: {e}"))?
         }
     };
@@ -29,6 +29,7 @@ pub fn db(init: bool, test: bool) -> Result<Connection> {
         };
 
         println!("sqlite database file located {db_path}");
+
         let db_initialized = connection
             .table_exists(None, "request")
             .map_err(|e| miette!("Could not query request table{e}"))?;
