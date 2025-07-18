@@ -1,14 +1,3 @@
-const parseJwt = (token) => {
-
-    const base64Url = token.split(".")[1];
-    const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
-    const jsonPayload = decodeURIComponent(window.atob(base64).split("").map(function(c) {
-        return "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2);
-    }).join(""));
-
-    return JSON.parse(jsonPayload);
-};
-
 window.onload = () => {
 
     const shortcuts = localStorage.getItem("shortcuts");
@@ -187,7 +176,18 @@ const toggleFavoriteItem = async () => {
                 profile.favorites.length === 0 ? [requestID] : [...profile.favorites, requestID]
             );
 
-            const favoriteRequest = await fetch("/api/user/favorites", { method: "PATCH", body: JSON.stringify({ "username": profile.username, "email": profile.email, "password": profile.password, "favorites": updatedFavorites, "deleted": false })});
+            const favoriteRequest = await fetch("/api/user/favorites", {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    "username": profile.username,
+                    "email": profile.email,
+                    "password": profile.password,
+                    "favorites": updatedFavorites,
+                    "date": profile.date,
+                    "deleted": false
+                })
+            });
             const favoriteResponse = await favoriteRequest.json();
             localStorage.setItem("auth", favoriteResponse);
 
@@ -196,7 +196,8 @@ const toggleFavoriteItem = async () => {
                 toggleFavoritesList();
             } else {
 
-                const responseMessage = updatedFavorites.length > favoritesBeforeUpdate.length ? document.getElementById(requestID).children[2] : document.getElementById(requestID).children[3];
+                const responseMessage = updatedFavorites.length > favoritesBeforeUpdate.length ? 
+                    document.getElementById(requestID).children[2] : document.getElementById(requestID).children[3];
                 responseMessage.style.display = "flex";
 
                 setTimeout(() => {
@@ -206,7 +207,18 @@ const toggleFavoriteItem = async () => {
         } else {
 
             const updatedFavorites = [requestID];
-            const favoriteRequest = await fetch("/api/user/favorites", { method: "PATCH", body: JSON.stringify({ "username": profile.username, "email": profile.email, "password": profile.password, "favorites": updatedFavorites, "deleted": false })});
+            const favoriteRequest = await fetch("/api/user/favorites", {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    "username": profile.username,
+                    "email": profile.email,
+                    "password": profile.password,
+                    "favorites": updatedFavorites,
+                    "date": profile.date,
+                    "deleted": false
+                })
+            });
             const favoriteResponse = await favoriteRequest.json();
             localStorage.setItem("auth", favoriteResponse);
 

@@ -1,3 +1,4 @@
+use std::num::NonZeroI32;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
@@ -20,7 +21,7 @@ pub use template::*;
 pub use user::*;
 
 use crate::models::{
-    deserialize_bool_for_db, deserialize_favorites_for_db, request::Request, user::User,
+    deserialize_bool_from_db, deserialize_favorites_from_db, request::Request, user::User,
 };
 
 pub type ConnectionState = State<Arc<Mutex<Connection>>>;
@@ -37,13 +38,11 @@ pub struct RequestBody {
 #[skip_serializing_none]
 #[derive(Serialize, Deserialize, Debug, Clone, Validate)]
 pub struct PathParams {
+    id: Option<NonZeroI32>,
     #[validate(length(min = 1))]
     email: Option<String>,
     #[validate(length(min = 1))]
     password: Option<String>,
-    #[serde(rename = "reqID")]
-    #[validate(length(min = 1))]
-    request_id: Option<String>,
     #[validate(length(min = 1))]
     token: Option<String>,
     #[validate(length(min = 1))]
@@ -80,12 +79,12 @@ pub async fn get_all_favorites_from_db(
         .lock()
         .map_err(|e| miette!("Global db can't block current thread {e}"))?;
 
-    let favorite_ids = map_single_value(
+    let favorite_ids = map_favorites(
         db.prepare(r#"SELECT favorites FROM "user" WHERE email = ?1"#)
             .map_err(|e| miette!("Invalid statement: {e}"))?,
         &[email.clone()],
-        "favorite",
-    )?;
+    )?
+    .unwrap_or(Vec::new());
 
     for favorite in favorite_ids {
         let res = map_requests(
@@ -96,7 +95,7 @@ pub async fn get_all_favorites_from_db(
             "#,
             )
             .map_err(|e| miette!("Invalid statement: {e}"))?,
-            &[email.clone(), favorite],
+            &[email.clone(), favorite.to_string()],
         )?;
 
         if let Some(favorite_request) = res.first() {
@@ -117,7 +116,7 @@ pub fn map_requests(mut statement: Statement<'_>, args: &[String]) -> Result<Vec
                 status: row.get(3)?,
                 method: row.get(4)?,
                 date: row.get(5)?,
-                hidden: deserialize_bool_for_db(row.get(6)?),
+                hidden: deserialize_bool_from_db(row.get(6)?),
             })
         })
         .map_err(|e| miette!("Error mapping rows to Request: {e}"))?
@@ -127,18 +126,20 @@ pub fn map_requests(mut statement: Statement<'_>, args: &[String]) -> Result<Vec
     Ok(parsed_rows)
 }
 
-pub fn map_single_value(
-    mut statement: Statement<'_>,
-    args: &[String],
-    value: &str,
-) -> Result<Vec<String>> {
+pub fn map_favorites(mut statement: Statement<'_>, args: &[String]) -> Result<Option<Vec<i32>>> {
     let parsed_rows = statement
-        .query_map(params_from_iter(args), |row| Ok(row.get(0)?))
-        .map_err(|e| miette!("_Error mapping {value}: {e}"))?
-        .map(|item| item.expect("Cannot unwrap {value} row item"))
+        .query_map(params_from_iter(args), |row| {
+            Ok(deserialize_favorites_from_db(row.get(0)?))
+        })
+        .map_err(|e| miette!("Error mapping favorite: {e}"))?
+        .map(|item| item.expect("Cannot unwrap favorite row item"))
         .collect::<Vec<_>>();
 
-    Ok(parsed_rows)
+    if let Some(favorites) = parsed_rows.first() {
+        Ok(favorites.clone())
+    } else {
+        Ok(None)
+    }
 }
 
 pub fn map_user(mut statement: Statement<'_>, args: &[&String]) -> Result<Vec<User>> {
@@ -148,9 +149,9 @@ pub fn map_user(mut statement: Statement<'_>, args: &[&String]) -> Result<Vec<Us
                 username: row.get(0)?,
                 email: row.get(1)?,
                 password: row.get(2)?,
-                favorites: deserialize_favorites_for_db(row.get(3)?),
+                favorites: deserialize_favorites_from_db(row.get(3)?),
                 date: row.get::<_, Option<String>>(4)?,
-                deleted: deserialize_bool_for_db(row.get(5)?),
+                deleted: deserialize_bool_from_db(row.get(5)?),
             })
         })
         .map_err(|e| miette!("Error mapping rows to User: {e}"))?
@@ -234,25 +235,6 @@ pub fn get_status_color(status: &Option<String>) -> String {
 }
 
 pub fn get_service_name(command: &String) -> String {
-    // let full_service = command.split(" ").last().unwrap_or_default();
-    // let address = {
-    //     let parts = command.split(" ").collect::<Vec<&str>>();
-    //     if parts.len() >= 2 {
-    //         parts[parts.len() - 2]
-    //     } else {
-    //         command.split(":").last().unwrap_or_default()
-    //     }
-    // };
-
-    // format!(
-    //     "{address} {}",
-    //     full_service
-    //         .split("/")
-    //         .next()
-    //         .unwrap_or(full_service)
-    //         .to_string()
-    // )
-
     command
         .split_whitespace()
         .filter(|word| !word.starts_with('-'))

@@ -1,5 +1,5 @@
 services:
-  gURL:
+  gurl:
     env_file:
       - .env
     build:
@@ -7,4 +7,4 @@ services:
     ports:
       - "${PORT}:${PORT}"
     volumes:
-      - "${DB_PATH}:${DB_PATH}"
+      - "./.docker-db:/.docker-db"

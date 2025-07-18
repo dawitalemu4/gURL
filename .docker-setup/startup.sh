@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # enter your gURL folder path
-cd ~/dev/gL
+cd ~/dev/gURL
 
 
 # start up the docker engine 
@@ -32,4 +32,4 @@ docker-compose up
 
 # for mac
 # start up gURL
-open http://localhost:1323
+open http://localhost:9000

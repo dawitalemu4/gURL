@@ -15,7 +15,7 @@ pub fn serialize_favorites_for_db(favorites: &Option<Vec<i32>>) -> String {
     }
 }
 
-pub fn deserialize_favorites_for_db(favorites_str: Option<String>) -> Option<Vec<i32>> {
+pub fn deserialize_favorites_from_db(favorites_str: Option<String>) -> Option<Vec<i32>> {
     favorites_str.filter(|s| !s.is_empty()).map(|s| {
         s.split(',')
             .filter_map(|n| n.trim().parse::<i32>().ok())
@@ -30,7 +30,7 @@ pub fn serialize_bool_for_db(value: bool) -> u8 {
     }
 }
 
-pub fn deserialize_bool_for_db(value: u8) -> bool {
+pub fn deserialize_bool_from_db(value: u8) -> bool {
     match value {
         1 => true,
         0 => false,
