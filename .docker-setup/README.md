@@ -11,3 +11,5 @@ All you need to do run this project with docker is to:
 4. Go to `localhost:YOURPORT` in your browser
 
 Check out [keycurl.github.io/shortcuts](https://keycurl.github.io/shortcuts) or [shortcuts.md](https://github.com/dawitalemu4/keycurl.github.io/blob/main/src/assets/docs/shortcuts.md) for tutorials on how to run the [startup script](https://github.com/dawitalemu4/gURL/tree/main/.docker-setup/startup.sh) in this folder from a shortcut on your taskbar to easily start up gURL!
+
+> Note for mac/linux users: If you are running into platform related errors, try to use this flag in the docker file: `FROM --platform=linux/amd64 dawitalemu4/gurl:latest`
