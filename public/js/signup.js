@@ -31,7 +31,7 @@ document.getElementById("signup-form").addEventListener("submit", async (e) => {
     const response = document.getElementById("signup-response");
     const timer = document.getElementById("signup-timer");
 
-    const createRequest = await fetch("/api/user/new", {
+    const createRequest = await fetch("/api/user", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
