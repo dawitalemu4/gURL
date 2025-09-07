@@ -2,7 +2,7 @@ use std::sync::{Arc, Mutex};
 
 use axum::{
     Router,
-    routing::{delete, get, patch, post, put},
+    routing::{delete, get, patch, post},
 };
 use tower_http::services::ServeDir;
 
@@ -12,17 +12,20 @@ pub fn init_router(global_db: Arc<Mutex<rusqlite::Connection>>) -> Router {
     Router::new()
         // User routes
         .route("/api/user/auth", post(get_user))
-        .route("/api/user/new", post(create_user))
-        .route("/api/user/update", put(update_user))
-        .route("/api/user/delete", delete(delete_user))
+        .route(
+            "/api/user",
+            post(create_user).put(update_user).delete(delete_user),
+        )
         .route("/api/user/favorites", patch(update_favorites))
         // Request routes
-        .route("/api/request/all/{email}", get(get_all_requests))
+        .route(
+            "/api/request/{email}",
+            get(get_all_requests).post(create_request),
+        )
         .route(
             "/api/request/favorites/{email}",
             get(get_all_favorite_requests),
         )
-        .route("/api/request/new/{email}", post(create_request))
         .route("/api/request/delete/{email}/{id}", delete(hide_request))
         // Template routes
         .route("/", get(render_page))

@@ -37,7 +37,7 @@ document.getElementById("profile-form").addEventListener("submit", async (e) => 
     const response = document.getElementById("profile-response");
     const timer = document.getElementById("profile-timer");
 
-    const updateReq = await fetch("/api/user/update", {
+    const updateReq = await fetch("/api/user", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -89,7 +89,7 @@ const deleteProfile = async () => {
     const response = document.getElementById("profile-response");
     const timer = document.getElementById("profile-timer");
 
-    const deleteReq = await fetch("/api/user/delete", {
+    const deleteReq = await fetch("/api/user", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
